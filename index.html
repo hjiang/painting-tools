@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painting Value Study</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🎨 Painting Value Study</h1>
+    <p class="subtitle">Reduce a photo to N value levels — plan your layers</p>
+  </header>
+
+  <main>
+    <!-- Drop zone / file input -->
+    <section id="upload-section">
+      <label id="drop-zone" for="file-input">
+        <span class="drop-icon">🖼️</span>
+        <span>Drop a photo here or <strong>click to upload</strong></span>
+        <span class="drop-hint">JPG, PNG, WebP</span>
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
+      </label>
+    </section>
+
+    <!-- Canvas area (hidden until image loaded) -->
+    <section id="canvas-section" class="hidden">
+      <div class="canvas-pair">
+        <div class="canvas-box">
+          <h3>Original</h3>
+          <canvas id="original-canvas"></canvas>
+        </div>
+        <div class="canvas-box">
+          <h3>Posterized</h3>
+          <canvas id="result-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="control-row">
+          <label for="value-slider" class="control-label">
+            Values: <strong id="value-label">3</strong>
+          </label>
+          <input type="range" id="value-slider" min="2" max="12" value="3" step="1">
+          <div class="slider-ticks">
+            <span>2</span><span>3</span><span>4</span><span>5</span>
+            <span>6</span><span>7</span><span>8</span><span>9</span>
+            <span>10</span><span>11</span><span>12</span>
+          </div>
+        </div>
+
+        <div class="control-row mode-row">
+          <span class="control-label">Mode:</span>
+          <label class="radio-label">
+            <input type="radio" name="mode" value="grayscale" checked>
+            <span>Grayscale</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="mode" value="color">
+            <span>Color</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Histogram -->
+      <div class="histogram-section">
+        <h3>Value Distribution</h3>
+        <canvas id="histogram-canvas" width="600" height="120"></canvas>
+      </div>
+
+      <!-- Download -->
+      <div class="download-section">
+        <button id="download-btn">⬇ Download PNG</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="posterize.js"></script>
+  <script src="histogram.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
