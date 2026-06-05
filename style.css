@@ -198,13 +198,94 @@ header h1 {
   background: #111;
 }
 
+/* ── Sketch Section ───────────────────────── */
+.sketch-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid #2a2a45;
+  padding-top: 1rem;
+}
+
+.sketch-toggle {
+  font-size: 0.9rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.4rem 0;
+  transition: color 0.2s;
+}
+
+.sketch-toggle:hover {
+  color: #ccc;
+}
+
+.sketch-arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  margin-right: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.sketch-section.open .sketch-arrow {
+  transform: rotate(90deg);
+}
+
+.sketch-content {
+  margin-top: 0.5rem;
+}
+
+.sketch-canvas-box canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  background: #111;
+}
+
+#edge-threshold {
+  flex: 1;
+  max-width: 400px;
+  accent-color: #7c8aff;
+  height: 6px;
+}
+
+#edge-threshold-label {
+  color: #f0f0f0;
+  font-size: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  background: #252540;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.checkbox-label:hover {
+  background: #303055;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: #7c8aff;
+}
+
+.checkbox-label:has(input:checked) {
+  background: #7c8aff22;
+  outline: 1px solid #7c8aff55;
+}
+
 /* ── Download ──────────────────────────────── */
 .download-section {
   margin-top: 1rem;
   text-align: center;
 }
 
-#download-btn {
+.download-btn {
   padding: 0.6rem 1.5rem;
   font-size: 0.95rem;
   border: none;
@@ -215,7 +296,7 @@ header h1 {
   transition: background 0.2s;
 }
 
-#download-btn:hover {
+.download-btn:hover {
   background: #5e6ee0;
 }
 

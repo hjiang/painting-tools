@@ -17,11 +17,20 @@
   const valueLabel = document.getElementById('value-label');
   const downloadBtn = document.getElementById('download-btn');
   const modeRadios = document.getElementsByName('mode');
+  const sketchToggle = document.getElementById('sketch-toggle');
+  const sketchContent = document.getElementById('sketch-content');
+  const sketchSection = document.querySelector('.sketch-section');
+  const sketchCanvas = document.getElementById('sketch-canvas');
+  const edgeThreshold = document.getElementById('edge-threshold');
+  const edgeThresholdLabel = document.getElementById('edge-threshold-label');
+  const edgeInvert = document.getElementById('edge-invert');
+  const downloadSketchBtn = document.getElementById('download-sketch-btn');
 
   // ── State ─────────────────────────────────────────
   let sourceImage = null;        // HTMLImageElement (original, decoded)
   let sourceImageData = null;    // ImageData (original pixels, full res)
   let posterizedResult = null;   // { imageData, histogram } from last call
+  let sketchImageData = null;    // ImageData from edge detection
 
   // ── Helpers ───────────────────────────────────────
   function getN() {
@@ -80,6 +89,22 @@
     drawHistogram(histogramCanvas, posterizedResult.histogram, N);
   }
 
+  // ── Edge detection pipeline ──────────────────────
+  function renderSketch() {
+    if (!sourceImageData) return;
+
+    var threshold = parseInt(edgeThreshold.value, 10);
+    var invert = edgeInvert.checked;
+    edgeThresholdLabel.textContent = threshold;
+
+    sketchImageData = detectEdges(sourceImageData, {
+      threshold: threshold,
+      invert: invert
+    });
+
+    drawImageDataToCanvas(sketchImageData, sketchCanvas);
+  }
+
   // ── Event: file loaded ────────────────────────────
   function handleFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
@@ -96,6 +121,11 @@
         canvasSection.classList.remove('hidden');
 
         render();
+
+        // If sketch section is open, also render the sketch
+        if (!sketchContent.classList.contains('hidden')) {
+          renderSketch();
+        }
       };
       img.src = e.target.result;
     };
@@ -139,6 +169,56 @@
   for (const radio of modeRadios) {
     radio.addEventListener('change', render);
   }
+
+  // Sketch section toggle
+  sketchToggle.addEventListener('click', function () {
+    var isOpen = !sketchContent.classList.contains('hidden');
+    if (isOpen) {
+      sketchContent.classList.add('hidden');
+      sketchSection.classList.remove('open');
+    } else {
+      sketchContent.classList.remove('hidden');
+      sketchSection.classList.add('open');
+      // Render sketch on first open, or re-render if already computed
+      if (!sketchImageData || sketchImageData.width !== sourceImageData.width) {
+        renderSketch();
+      }
+    }
+  });
+
+  // Edge threshold slider
+  edgeThreshold.addEventListener('input', function () {
+    if (!sketchContent.classList.contains('hidden')) {
+      renderSketch();
+    }
+  });
+
+  // Edge invert checkbox
+  edgeInvert.addEventListener('change', function () {
+    if (!sketchContent.classList.contains('hidden')) {
+      renderSketch();
+    }
+  });
+
+  // Download sketch
+  downloadSketchBtn.addEventListener('click', function () {
+    if (!sketchImageData) return;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = sketchImageData.width;
+    canvas.height = sketchImageData.height;
+    var ctx = canvas.getContext('2d');
+    ctx.putImageData(sketchImageData, 0, 0);
+
+    canvas.toBlob(function (blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'sketch.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
 
   // Download
   downloadBtn.addEventListener('click', function () {

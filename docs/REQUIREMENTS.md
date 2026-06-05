@@ -36,7 +36,15 @@ Display a value histogram below the posterized image showing the distribution
 of values across the `N` bands. Each band is shown as a bar whose height
 represents the pixel count in that band.
 
-### F5: Layer Isolation (Stretch Goal)
+### F5: Edge Detection / Rough Sketch
+Detect edges in the uploaded photo and render a rough line-drawing sketch.
+- Uses the Sobel operator for edge detection (3×3 kernel, gradient magnitude)
+- Configurable threshold (0–255) controls edge sensitivity
+- Invert option for white lines on dark background
+- Collapsible section below the posterized view
+- Download the sketch as PNG at original resolution
+
+### F6: Layer Isolation (Stretch Goal)
 For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 
@@ -49,7 +57,8 @@ Useful for tracing or studying individual value masses.
 
 ## Out of Scope (v1)
 
-- Edge detection / outline extraction
+- Line thinning / skeletonization
+- Adaptive thresholding (Otsu)
 - Grid overlay
 - Batch processing
 - Palette suggestions or color matching

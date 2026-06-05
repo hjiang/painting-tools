@@ -20,13 +20,18 @@ Two modes:
 A **histogram** below the image shows the distribution of pixels across the N
 value bands.
 
+Expand the **Rough Sketch** section to see an edge-detected line drawing —
+useful for tracing or studying structural lines. Adjust the threshold slider
+to control edge sensitivity, and toggle invert for white-on-dark.
+
 ## Usage
 
 1. Open `index.html` in any modern browser (Chrome, Firefox, Safari, Edge)
 2. Drop a photo or click to upload (JPG, PNG, WebP)
 3. Adjust the **Values** slider (2–12)
 4. Toggle between **Grayscale** and **Color** mode
-5. Click **Download PNG** to save at original resolution
+5. Click **▶ Rough Sketch** for an edge-detected line drawing
+6. Click **Download PNG** (or **Download Sketch PNG**) to save at original resolution
 
 Works on desktop and mobile. No internet needed — everything runs in your
 browser.
@@ -38,6 +43,7 @@ Zero dependencies. Zero build step. Edit the files and reload.
 ```bash
 # Run unit tests
 node tests/posterize.test.js
+node tests/edgeDetect.test.js
 ```
 
 ### File Map
@@ -48,8 +54,10 @@ node tests/posterize.test.js
 | `style.css` | Dark theme, responsive layout |
 | `app.js` | Wiring: file load → posterize → display → download |
 | `posterize.js` | Core algorithm: grayscale & color posterization |
+| `edgeDetect.js` | Sobel edge detection → rough line sketch |
 | `histogram.js` | Value-distribution bar chart |
 | `tests/posterize.test.js` | 40 unit tests |
+| `tests/edgeDetect.test.js` | 153 unit tests |
 
 See `AGENTS.md` for detailed architecture and conventions.
 

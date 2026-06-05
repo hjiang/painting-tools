@@ -69,15 +69,45 @@
         <canvas id="histogram-canvas" width="600" height="120"></canvas>
       </div>
 
-      <!-- Download -->
+      <!-- Download posterized -->
       <div class="download-section">
-        <button id="download-btn">⬇ Download PNG</button>
+        <button id="download-btn" class="download-btn">⬇ Download Posterized PNG</button>
+      </div>
+
+      <!-- Sketch Section (collapsible) -->
+      <div class="sketch-section">
+        <h3 class="sketch-toggle" id="sketch-toggle">
+          <span class="sketch-arrow">▶</span> Rough Sketch
+        </h3>
+        <div class="sketch-content hidden" id="sketch-content">
+          <div class="canvas-box sketch-canvas-box">
+            <canvas id="sketch-canvas"></canvas>
+          </div>
+          <div class="controls">
+            <div class="control-row">
+              <label for="edge-threshold" class="control-label">
+                Threshold: <strong id="edge-threshold-label">50</strong>
+              </label>
+              <input type="range" id="edge-threshold" min="0" max="255" value="50" step="1">
+            </div>
+            <div class="control-row">
+              <label class="checkbox-label">
+                <input type="checkbox" id="edge-invert">
+                <span>Invert (white lines on dark)</span>
+              </label>
+            </div>
+          </div>
+          <div class="download-section">
+            <button id="download-sketch-btn" class="download-btn">⬇ Download Sketch PNG</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
   <script src="posterize.js"></script>
   <script src="histogram.js"></script>
+  <script src="edgeDetect.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

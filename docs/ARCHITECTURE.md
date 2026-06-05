@@ -83,14 +83,17 @@ painting-tools/
 ├── style.css           # Layout and appearance
 ├── app.js              # App logic: file input, slider, mode toggle, download
 ├── posterize.js        # Pure function: posterization algorithm
+├── edgeDetect.js       # Pure function: Sobel edge detection → sketch
 ├── histogram.js        # Compute and render value histogram
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
 │   └── plans/
-│       └── 001-initial-mvp.md
+│       ├── 001-initial-mvp.md
+│       └── 002-edge-detection-sketch.md
 └── tests/
     ├── posterize.test.js   # Unit tests for posterization
+    ├── edgeDetect.test.js  # Unit tests for edge detection
     └── histogram.test.js   # Unit tests for histogram computation
 ```
 
@@ -99,15 +102,19 @@ painting-tools/
 | Module | Responsibility | Contract |
 |--------|---------------|----------|
 | `posterize.js` | `posterize(imageData, N, mode) → {imageData, histogram}` | Pure function. Takes pixel data, level count, and mode (`'grayscale'` or `'color'`). Returns posterized `ImageData` plus histogram bin counts. |
+| `edgeDetect.js` | `detectEdges(imageData, {threshold, invert}) → ImageData` | Pure function. Applies Sobel operator (3×3) for edge detection. Returns sketch-style `ImageData` (dark lines on light background). |
 | `histogram.js` | `drawHistogram(canvas, bins, N)` | Renders histogram bars on a given canvas. Each bar height = pixel count in that value band. |
-| `app.js` | Wiring: DOM events, canvas management, download | Calls `posterize`, updates visible canvas and histogram, handles UI state. |
-| `index.html` | Static structure | File input, two canvases (result + histogram), slider, mode toggle, download button. |
+| `app.js` | Wiring: DOM events, canvas management, download | Calls `posterize` and `detectEdges`, updates visible canvases and histogram, handles UI state. |
+| `index.html` | Static structure | File input, three canvases (original + posterized + sketch), slider, mode toggle, sketch controls, download buttons. |
 | `style.css` | Responsive layout | Side-by-side on wide screens, stacked on narrow. |
 
 ## Testing Strategy
 
 - **Unit tests** (`posterize.test.js`): Test grayscale and color posterization
   with known inputs. Verify histogram bin counts. Run with Node.js.
+- **Unit tests** (`edgeDetect.test.js`): Test Sobel edge detection with uniform
+  images, sharp edges (vertical/horizontal/diagonal), threshold behavior,
+  invert mode, alpha preservation, and small inputs.
 - **Unit tests** (`histogram.test.js`): Test histogram computation on known
   pixel distributions.
 - **Manual visual tests**: Load sample photos at various N values, verify
