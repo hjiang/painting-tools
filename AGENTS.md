@@ -60,21 +60,33 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
 5. **Image processing happens at full resolution** — the visible canvases are
    CSS-scaled, but posterization and download use original pixel dimensions.
 
+6. **Grid overlay** uses Canvas 2D compositing (not pixel manipulation) — the
+   source image is drawn, then grid lines, labels, and diagonals are drawn on
+   top. Square-cells mode auto-computes the companion dimension from the
+   image aspect ratio and dims margins outside the grid area.
+
 ## File Structure
 
 ```
 painting-tools/
-├── index.html          # UI shell
+├── index.html          # UI shell with tab bar and tool views
 ├── style.css           # Dark theme, responsive layout
-├── app.js              # Wiring: file input, canvas, controls, download
+├── app.js              # ImageManager, ToolShell, canvas helpers (IIFE)
 ├── posterize.js        # posterize(imageData, N, mode) → { imageData, histogram }
 ├── histogram.js        # drawHistogram(canvas, bins, N)
+├── edgeDetect.js       # detectEdges(imageData, {threshold, invert}) → ImageData
+├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
+├── posterizeTool.js    # Tool module: posterization UI
+├── sketchTool.js       # Tool module: edge detection / sketch UI
+├── gridTool.js         # Tool module: grid overlay UI
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
 │   └── plans/
 └── tests/
-    └── posterize.test.js
+    ├── posterize.test.js
+    ├── edgeDetect.test.js
+    └── gridOverlay.test.js
 ```
 
 ## When Adding Features

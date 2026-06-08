@@ -44,7 +44,21 @@ Detect edges in the uploaded photo and render a rough line-drawing sketch.
 - Collapsible section below the posterized view
 - Download the sketch as PNG at original resolution
 
-### F6: Layer Isolation (Stretch Goal)
+### F6: Grid Overlay
+Overlay a configurable grid on the uploaded photo to aid accurate initial sketching.
+- Configurable rows (2–12) and columns (2–12)
+- Three preset line colors: white, black, red
+- Line width control (1–4 px)
+- Dashed or solid line style
+- Optional row/column labels (A, B, C… / 1, 2, 3…)
+- Optional diagonals within each cell
+- Square cells mode: forces cells to be perfect squares
+  - Auto Rows/Cols toggle: when on, adjusting one dimension auto-computes
+    the other from the image aspect ratio
+  - Dims margins outside the grid area
+- Download gridded photo at original resolution as PNG
+
+### F7: Layer Isolation (Stretch Goal)
 For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 
@@ -59,6 +73,6 @@ Useful for tracing or studying individual value masses.
 
 - Line thinning / skeletonization
 - Adaptive thresholding (Otsu)
-- Grid overlay
 - Batch processing
 - Palette suggestions or color matching
+- Composition guides (golden ratio, rule of thirds) — separate tool idea

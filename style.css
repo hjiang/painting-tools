@@ -239,7 +239,8 @@ header h1 {
 /* ── Sketch Section ───────────────────────── */
 /* (sketch toggle styles removed — now uses tab bar) */
 
-.sketch-canvas-box canvas {
+.sketch-canvas-box canvas,
+.grid-canvas-box canvas {
   max-width: 100%;
   height: auto;
   border-radius: 6px;
