@@ -16,35 +16,45 @@ Why this over alternatives:
 
 ## High-Level Design
 
+The app uses a **tool registry pattern**: a shared shell manages image loading
+and tab switching, while each tool self-registers and owns its own UI + logic.
+
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                        Browser                           │
 │                                                          │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌───────┐ │
-│  │ File     │   │ Canvas   │   │ Download │   │ Mode  │ │
-│  │ Input    │──▶│ Pipeline │──▶│ Link     │   │Toggle │ │
-│  └──────────┘   └──────────┘   └──────────┘   │B&W/Clr│ │
-│                      │                         └───────┘ │
-│                      ▼                                    │
-│               ┌──────────────┐   ┌──────────────┐        │
-│               │ Value Slider │   │  Histogram   │        │
-│               │ (2 ───●───12)│   │  (bar chart) │        │
-│               └──────────────┘   └──────────────┘        │
+│  ┌──────────┐   ┌──────────────────────────────────┐     │
+│  │ File     │──▶│         ImageManager             │     │
+│  │ Input    │   │  (load once, share imageData)    │     │
+│  └──────────┘   └──────────┬───────────────────────┘     │
+│                            │ notify                      │
+│                            ▼                             │
+│  ┌──────────────────────────────────────────────────┐    │
+│  │              ToolShell (registry + tabs)          │    │
+│  │  activate('posterize')  activate('sketch')  ...  │    │
+│  └────────┬─────────────────────┬───────────────────┘    │
+│           │ mount/process       │ mount/process          │
+│           ▼                     ▼                        │
+│  ┌──────────────────┐  ┌──────────────────┐             │
+│  │  Posterize Tool  │  │   Sketch Tool    │             │
+│  │  ┌────────────┐  │  │  ┌────────────┐  │             │
+│  │  │ posterize()│  │  │  │detectEdges()│  │             │
+│  │  │ histogram()│  │  │  └────────────┘  │             │
+│  │  └────────────┘  │  └──────────────────┘             │
+│  └──────────────────┘                                   │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
-1. User selects a file → `FileReader` reads it as a data URL
-2. Data URL → `Image` object (decoded in-memory)
-3. Image → offscreen `<canvas>` at original resolution
-4. Canvas pixel data → `ImageData` → posterization algorithm
-   - **Grayscale mode**: RGB→luminance, quantize, output grayscale
-   - **Color mode**: RGB→HSL, quantize L, keep H & S, HSL→RGB
-5. Posterized pixels → visible `<canvas>` (scaled to fit viewport)
-6. User adjusts `N` or toggles mode → re-run step 4–5
-7. Histogram computed from posterized pixel data → rendered to a small canvas
-8. User clicks download → visible canvas → PNG blob → download
+1. User selects a file → `ImageManager.load(file)` reads it asynchronously
+2. Image decoded → `ImageData` stored in `ImageManager`
+3. `ImageManager` notifies `ToolShell` listener
+4. `ToolShell` calls active tool's `process(imageData)`
+5. The tool runs its algorithm, draws to its canvases, updates its controls
+6. User switches tabs → `ToolShell.activate(id)` → new tool's `mount()` + `process()`
+7. User changes a tool's parameters → tool re-runs its algorithm directly
+8. Download: tool exports its computed `ImageData` as PNG blob
 
 ### Algorithm: Value Posterization
 
@@ -79,34 +89,53 @@ levels — useful for planning a painting with a limited palette.
 
 ```
 painting-tools/
-├── index.html          # Main page (UI structure)
-├── style.css           # Layout and appearance
-├── app.js              # App logic: file input, slider, mode toggle, download
+├── index.html          # Shell: file input, tab bar, tool view containers
+├── style.css           # Layout, tab bar, tool styling, responsive
+├── app.js              # Shared infrastructure: ImageManager, ToolShell, helpers
 ├── posterize.js        # Pure function: posterization algorithm
 ├── edgeDetect.js       # Pure function: Sobel edge detection → sketch
-├── histogram.js        # Compute and render value histogram
+├── histogram.js        # Pure function: histogram rendering
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
 │   └── plans/
 │       ├── 001-initial-mvp.md
-│       └── 002-edge-detection-sketch.md
+│       ├── 002-edge-detection-sketch.md
+│       └── 003-tool-registry.md
 └── tests/
-    ├── posterize.test.js   # Unit tests for posterization
-    ├── edgeDetect.test.js  # Unit tests for edge detection
-    └── histogram.test.js   # Unit tests for histogram computation
+    ├── posterize.test.js
+    ├── edgeDetect.test.js
+    └── histogram.test.js
 ```
 
 ### Key Modules
 
 | Module | Responsibility | Contract |
 |--------|---------------|----------|
+| `app.js` | `ImageManager`, `ToolShell`, canvas helpers, tool registrations | `ImageManager.load(file)`, `ImageManager.getImageData()`, `ImageManager.onLoad(fn)`. `ToolShell.register({id,name,icon,mount,process,unmount})`, `ToolShell.activate(id)`. |
 | `posterize.js` | `posterize(imageData, N, mode) → {imageData, histogram}` | Pure function. Takes pixel data, level count, and mode (`'grayscale'` or `'color'`). Returns posterized `ImageData` plus histogram bin counts. |
 | `edgeDetect.js` | `detectEdges(imageData, {threshold, invert}) → ImageData` | Pure function. Applies Sobel operator (3×3) for edge detection. Returns sketch-style `ImageData` (dark lines on light background). |
 | `histogram.js` | `drawHistogram(canvas, bins, N)` | Renders histogram bars on a given canvas. Each bar height = pixel count in that value band. |
-| `app.js` | Wiring: DOM events, canvas management, download | Calls `posterize` and `detectEdges`, updates visible canvases and histogram, handles UI state. |
-| `index.html` | Static structure | File input, three canvases (original + posterized + sketch), slider, mode toggle, sketch controls, download buttons. |
-| `style.css` | Responsive layout | Side-by-side on wide screens, stacked on narrow. |
+| `index.html` | Shell structure | File input, empty tab bar (populated by ToolShell), two tool view containers. Each tool's DOM lives in its `.tool-view` div. |
+| `style.css` | Responsive layout + tab bar | Tab bar styles, tool view layout, side-by-side on wide screens, stacked on narrow. |
+
+### Tool Contract
+
+Each tool registers with `ToolShell.register(config)` where:
+
+```js
+{
+  id: 'my-tool',        // unique string, matches tool-my-tool DOM id
+  name: 'My Tool',      // display name in tab
+  icon: '🔧',           // optional emoji
+  mount(container) {},  // called once: grab DOM refs, wire events, override process()
+  process(imageData) {},// called when image loaded or tab activated — runs algorithm
+  unmount() {}          // optional cleanup
+}
+```
+
+To add a new tool, you add **one `<script>` tag** in `index.html` — zero changes
+to `app.js`, `style.css`, or existing tools.
 
 ## Testing Strategy
 

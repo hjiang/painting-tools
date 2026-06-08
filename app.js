@@ -1,145 +1,366 @@
 // app.js
 // Painting Value Study — UI wiring.
-// Handles file input, canvas rendering, controls, and download.
+// Shared infrastructure: ImageManager, ToolShell, canvas helpers.
+// Tools self-register via ToolShell.register().
 
 (function () {
   'use strict';
 
-  // ── DOM references ─────────────────────────────────
-  const fileInput = document.getElementById('file-input');
-  const dropZone = document.getElementById('drop-zone');
-  const uploadSection = document.getElementById('upload-section');
-  const canvasSection = document.getElementById('canvas-section');
-  const originalCanvas = document.getElementById('original-canvas');
-  const resultCanvas = document.getElementById('result-canvas');
-  const histogramCanvas = document.getElementById('histogram-canvas');
-  const valueSlider = document.getElementById('value-slider');
-  const valueLabel = document.getElementById('value-label');
-  const downloadBtn = document.getElementById('download-btn');
-  const modeRadios = document.getElementsByName('mode');
-  const sketchToggle = document.getElementById('sketch-toggle');
-  const sketchContent = document.getElementById('sketch-content');
-  const sketchSection = document.querySelector('.sketch-section');
-  const sketchCanvas = document.getElementById('sketch-canvas');
-  const edgeThreshold = document.getElementById('edge-threshold');
-  const edgeThresholdLabel = document.getElementById('edge-threshold-label');
-  const edgeInvert = document.getElementById('edge-invert');
-  const downloadSketchBtn = document.getElementById('download-sketch-btn');
+  // ═══════════════════════════════════════════════════════
+  //  ImageManager — loads and shares the source image
+  // ═══════════════════════════════════════════════════════
 
-  // ── State ─────────────────────────────────────────
-  let sourceImage = null;        // HTMLImageElement (original, decoded)
-  let sourceImageData = null;    // ImageData (original pixels, full res)
-  let posterizedResult = null;   // { imageData, histogram } from last call
-  let sketchImageData = null;    // ImageData from edge detection
+  var ImageManager = {
+    _imageData: null,   // ImageData at original resolution
+    _listeners: [],     // callbacks called when a new image is loaded
 
-  // ── Helpers ───────────────────────────────────────
-  function getN() {
-    return parseInt(valueSlider.value, 10);
-  }
+    /**
+     * Load an image file, decode it to ImageData, and notify listeners.
+     * @param {File} file
+     */
+    load: function (file) {
+      if (!file || !file.type.startsWith('image/')) return;
 
-  function getMode() {
-    for (const radio of modeRadios) {
-      if (radio.checked) return radio.value;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          ImageManager._imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          // Notify all listeners
+          for (var i = 0; i < ImageManager._listeners.length; i++) {
+            ImageManager._listeners[i](ImageManager._imageData);
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+
+    /** @returns {ImageData|null} */
+    getImageData: function () {
+      return ImageManager._imageData;
+    },
+
+    /**
+     * Register a callback for new image loads.
+     * @param {function(ImageData)} fn
+     */
+    onLoad: function (fn) {
+      ImageManager._listeners.push(fn);
     }
-    return 'grayscale';
-  }
+  };
 
-  // Extract ImageData from an HTMLImageElement via offscreen canvas
-  function imageToImageData(img) {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    return ctx.getImageData(0, 0, canvas.width, canvas.height);
-  }
+  // ═══════════════════════════════════════════════════════
+  //  ToolShell — registry + tab switching
+  // ═══════════════════════════════════════════════════════
 
-  // Draw ImageData to a canvas, scaling to fit its CSS size
+  var ToolShell = {
+    _tools: {},         // id → { id, name, icon, mount, process, unmount }
+    _activeId: null,
+    _tabBar: null,
+    _viewsContainer: null,
+
+    /**
+     * Initialize the shell with the tab bar and views container elements.
+     * Call once at startup.
+     */
+    init: function (tabBarEl, viewsContainerEl) {
+      ToolShell._tabBar = tabBarEl;
+      ToolShell._viewsContainer = viewsContainerEl;
+
+      // Listen for new images → run active tool's process()
+      ImageManager.onLoad(function (imageData) {
+        // Show the UI
+        document.getElementById('upload-section').classList.add('hidden');
+        tabBarEl.classList.remove('hidden');
+        viewsContainerEl.classList.remove('hidden');
+
+        if (ToolShell._activeId && ToolShell._tools[ToolShell._activeId]) {
+          ToolShell._tools[ToolShell._activeId].process(imageData);
+        }
+      });
+
+      // Re-process on window resize (canvas rescaling)
+      var resizeTimeout;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function () {
+          if (ToolShell._activeId && ToolShell._tools[ToolShell._activeId]) {
+            var idata = ImageManager.getImageData();
+            if (idata) {
+              ToolShell._tools[ToolShell._activeId].process(idata);
+            }
+          }
+        }, 150);
+      });
+    },
+
+    /**
+     * Register a tool. Creates a tab button.
+     * @param {{ id: string, name: string, icon?: string,
+     *           mount: function(HTMLElement),
+     *           process: function(ImageData),
+     *           unmount?: function() }} config
+     */
+    register: function (config) {
+      ToolShell._tools[config.id] = config;
+
+      // Create tab button
+      var btn = document.createElement('button');
+      btn.className = 'tab-btn';
+      btn.textContent = (config.icon ? config.icon + ' ' : '') + config.name;
+      btn.addEventListener('click', function () {
+        ToolShell.activate(config.id);
+      });
+      btn.dataset.toolId = config.id;
+      ToolShell._tabBar.appendChild(btn);
+    },
+
+    /**
+     * Switch to the given tool. Mounts it on first activation.
+     * @param {string} id
+     */
+    activate: function (id) {
+      var prev = ToolShell._tools[ToolShell._activeId];
+      var next = ToolShell._tools[id];
+      if (!next || id === ToolShell._activeId) return;
+
+      // Deactivate previous
+      if (prev) {
+        if (prev.unmount) prev.unmount();
+      }
+
+      // Update tab button styles
+      var buttons = ToolShell._tabBar.querySelectorAll('.tab-btn');
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].classList.remove('active');
+      }
+      var activeBtn = ToolShell._tabBar.querySelector('[data-tool-id="' + id + '"]');
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Hide all views
+      var views = ToolShell._viewsContainer.querySelectorAll('.tool-view');
+      for (var j = 0; j < views.length; j++) {
+        views[j].classList.add('hidden');
+      }
+
+      // Show target view
+      var viewEl = document.getElementById('tool-' + id);
+      if (viewEl) viewEl.classList.remove('hidden');
+
+      // Mount (first time only)
+      if (!next._mounted) {
+        next._mounted = true;
+        next.mount(viewEl);
+      }
+
+      ToolShell._activeId = id;
+
+      // If image already loaded, process for this tool
+      var imageData = ImageManager.getImageData();
+      if (imageData) {
+        next.process(imageData);
+      }
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════
+  //  Canvas helpers (used by tools)
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * Draw ImageData to a canvas, scaling to fit its container.
+   * @param {ImageData} imageData
+   * @param {HTMLCanvasElement} canvas
+   */
   function drawImageDataToCanvas(imageData, canvas) {
-    // Set canvas resolution to match image data
     canvas.width = imageData.width;
     canvas.height = imageData.height;
 
-    // Scale canvas display size to fit container, preserving aspect ratio
-    const maxW = Math.min(canvas.parentElement.clientWidth - 16, 540);
-    const scale = Math.min(1, maxW / imageData.width);
+    var maxW = Math.min(canvas.parentElement.clientWidth - 16, 540);
+    var scale = Math.min(1, maxW / imageData.width);
     canvas.style.width = Math.round(imageData.width * scale) + 'px';
     canvas.style.height = Math.round(imageData.height * scale) + 'px';
 
-    const ctx = canvas.getContext('2d');
+    var ctx = canvas.getContext('2d');
     ctx.putImageData(imageData, 0, 0);
   }
 
-  // ── Core render pipeline ──────────────────────────
-  function render() {
-    if (!sourceImageData) return;
+  /**
+   * Export ImageData to a PNG download.
+   * @param {ImageData} imageData
+   * @param {string} filename
+   */
+  function downloadImageData(imageData, filename) {
+    var canvas = document.createElement('canvas');
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    var ctx = canvas.getContext('2d');
+    ctx.putImageData(imageData, 0, 0);
 
-    const N = getN();
-    const mode = getMode();
-    valueLabel.textContent = N;
-
-    // Posterize
-    posterizedResult = posterize(sourceImageData, N, mode);
-
-    // Draw to canvases
-    drawImageDataToCanvas(sourceImageData, originalCanvas);
-    drawImageDataToCanvas(posterizedResult.imageData, resultCanvas);
-
-    // Draw histogram
-    drawHistogram(histogramCanvas, posterizedResult.histogram, N);
+    canvas.toBlob(function (blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
   }
 
-  // ── Edge detection pipeline ──────────────────────
-  function renderSketch() {
-    if (!sourceImageData) return;
+  // ═══════════════════════════════════════════════════════
+  //  Initialize shell
+  // ═══════════════════════════════════════════════════════
 
-    var threshold = parseInt(edgeThreshold.value, 10);
-    var invert = edgeInvert.checked;
-    edgeThresholdLabel.textContent = threshold;
+  var tabBar = document.getElementById('tab-bar');
+  var viewsContainer = document.getElementById('tool-views');
+  ToolShell.init(tabBar, viewsContainer);
 
-    sketchImageData = detectEdges(sourceImageData, {
-      threshold: threshold,
-      invert: invert
-    });
+  // ═══════════════════════════════════════════════════════
+  //  Tool: Posterize
+  // ═══════════════════════════════════════════════════════
 
-    drawImageDataToCanvas(sketchImageData, sketchCanvas);
-  }
+  ToolShell.register({
+    id: 'posterize',
+    name: 'Value Posterizer',
+    icon: '\uD83C\uDFA8',  // 🎨
 
-  // ── Event: file loaded ────────────────────────────
-  function handleFile(file) {
-    if (!file || !file.type.startsWith('image/')) return;
+    mount: function (container) {
+      var valueSlider = document.getElementById('value-slider');
+      var valueLabel = document.getElementById('value-label');
+      var modeRadios = document.getElementsByName('mode');
+      var downloadBtn = document.getElementById('download-btn');
+      var originalCanvas = document.getElementById('original-canvas');
+      var resultCanvas = document.getElementById('result-canvas');
+      var histogramCanvas = document.getElementById('histogram-canvas');
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = new Image();
-      img.onload = function () {
-        sourceImage = img;
-        sourceImageData = imageToImageData(img);
+      var _lastResult = null;
 
-        // Show canvas section, hide upload
-        uploadSection.classList.add('hidden');
-        canvasSection.classList.remove('hidden');
+      function getN() {
+        return parseInt(valueSlider.value, 10);
+      }
 
-        render();
-
-        // If sketch section is open, also render the sketch
-        if (!sketchContent.classList.contains('hidden')) {
-          renderSketch();
+      function getMode() {
+        for (var i = 0; i < modeRadios.length; i++) {
+          if (modeRadios[i].checked) return modeRadios[i].value;
         }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
+        return 'grayscale';
+      }
 
-  // ── Event listeners ───────────────────────────────
-  fileInput.addEventListener('change', function () {
-    if (fileInput.files.length > 0) {
-      handleFile(fileInput.files[0]);
+      function render() {
+        var imageData = ImageManager.getImageData();
+        if (!imageData) return;
+
+        var N = getN();
+        var mode = getMode();
+        valueLabel.textContent = N;
+
+        _lastResult = posterize(imageData, N, mode);
+
+        drawImageDataToCanvas(imageData, originalCanvas);
+        drawImageDataToCanvas(_lastResult.imageData, resultCanvas);
+        drawHistogram(histogramCanvas, _lastResult.histogram, N);
+      }
+
+      // Replace process with our render function
+      // (We override the tool's process binding)
+      ToolShell._tools['posterize'].process = function (imageData) {
+        drawImageDataToCanvas(imageData, originalCanvas);
+        render();
+      };
+
+      valueSlider.addEventListener('input', render);
+      for (var i = 0; i < modeRadios.length; i++) {
+        modeRadios[i].addEventListener('change', render);
+      }
+
+      downloadBtn.addEventListener('click', function () {
+        if (_lastResult) {
+          downloadImageData(_lastResult.imageData, 'posterized.png');
+        }
+      });
+    },
+
+    process: function (imageData) {
+      // Overridden in mount() — no-op here
     }
   });
 
-  // Drag and drop
+  // ═══════════════════════════════════════════════════════
+  //  Tool: Sketch
+  // ═══════════════════════════════════════════════════════
+
+  ToolShell.register({
+    id: 'sketch',
+    name: 'Rough Sketch',
+    icon: '\u270F\uFE0F',  // ✏️
+
+    mount: function (container) {
+      var sketchCanvas = document.getElementById('sketch-canvas');
+      var edgeThreshold = document.getElementById('edge-threshold');
+      var edgeThresholdLabel = document.getElementById('edge-threshold-label');
+      var edgeInvert = document.getElementById('edge-invert');
+      var downloadSketchBtn = document.getElementById('download-sketch-btn');
+
+      var _sketchImageData = null;
+
+      function renderSketch() {
+        var imageData = ImageManager.getImageData();
+        if (!imageData) return;
+
+        var threshold = parseInt(edgeThreshold.value, 10);
+        var invert = edgeInvert.checked;
+        edgeThresholdLabel.textContent = threshold;
+
+        _sketchImageData = detectEdges(imageData, {
+          threshold: threshold,
+          invert: invert
+        });
+
+        drawImageDataToCanvas(_sketchImageData, sketchCanvas);
+      }
+
+      // Override process
+      ToolShell._tools['sketch'].process = function (imageData) {
+        renderSketch();
+      };
+
+      edgeThreshold.addEventListener('input', renderSketch);
+      edgeInvert.addEventListener('change', renderSketch);
+
+      downloadSketchBtn.addEventListener('click', function () {
+        if (_sketchImageData) {
+          downloadImageData(_sketchImageData, 'sketch.png');
+        }
+      });
+    },
+
+    process: function (imageData) {
+      // Overridden in mount()
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════
+  //  File input — triggers ImageManager
+  // ═══════════════════════════════════════════════════════
+
+  var fileInput = document.getElementById('file-input');
+  var dropZone = document.getElementById('drop-zone');
+
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files.length > 0) {
+      ImageManager.load(fileInput.files[0]);
+      // Activate first tool after image load
+      ToolShell.activate('posterize');
+    }
+  });
+
   dropZone.addEventListener('dragover', function (e) {
     e.preventDefault();
     dropZone.classList.add('drag-over');
@@ -153,104 +374,13 @@
     e.preventDefault();
     dropZone.classList.remove('drag-over');
     if (e.dataTransfer.files.length > 0) {
-      handleFile(e.dataTransfer.files[0]);
+      ImageManager.load(e.dataTransfer.files[0]);
+      ToolShell.activate('posterize');
     }
   });
 
-  // Allow clicking anywhere on the drop zone label
   dropZone.addEventListener('click', function () {
     fileInput.click();
   });
 
-  // Slider
-  valueSlider.addEventListener('input', render);
-
-  // Mode toggle
-  for (const radio of modeRadios) {
-    radio.addEventListener('change', render);
-  }
-
-  // Sketch section toggle
-  sketchToggle.addEventListener('click', function () {
-    var isOpen = !sketchContent.classList.contains('hidden');
-    if (isOpen) {
-      sketchContent.classList.add('hidden');
-      sketchSection.classList.remove('open');
-    } else {
-      sketchContent.classList.remove('hidden');
-      sketchSection.classList.add('open');
-      // Render sketch on first open, or re-render if already computed
-      if (!sketchImageData || sketchImageData.width !== sourceImageData.width) {
-        renderSketch();
-      }
-    }
-  });
-
-  // Edge threshold slider
-  edgeThreshold.addEventListener('input', function () {
-    if (!sketchContent.classList.contains('hidden')) {
-      renderSketch();
-    }
-  });
-
-  // Edge invert checkbox
-  edgeInvert.addEventListener('change', function () {
-    if (!sketchContent.classList.contains('hidden')) {
-      renderSketch();
-    }
-  });
-
-  // Download sketch
-  downloadSketchBtn.addEventListener('click', function () {
-    if (!sketchImageData) return;
-
-    var canvas = document.createElement('canvas');
-    canvas.width = sketchImageData.width;
-    canvas.height = sketchImageData.height;
-    var ctx = canvas.getContext('2d');
-    ctx.putImageData(sketchImageData, 0, 0);
-
-    canvas.toBlob(function (blob) {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'sketch.png';
-      a.click();
-      URL.revokeObjectURL(url);
-    }, 'image/png');
-  });
-
-  // Download
-  downloadBtn.addEventListener('click', function () {
-    if (!posterizedResult) return;
-
-    // Draw posterized result to a full-resolution offscreen canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = posterizedResult.imageData.width;
-    canvas.height = posterizedResult.imageData.height;
-    const ctx = canvas.getContext('2d');
-    ctx.putImageData(posterizedResult.imageData, 0, 0);
-
-    // Trigger download
-    canvas.toBlob(function (blob) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'posterized.png';
-      a.click();
-      URL.revokeObjectURL(url);
-    }, 'image/png');
-  });
-
-  // ── Window resize: re-scale canvases ──────────────
-  let resizeTimeout;
-  window.addEventListener('resize', function () {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(function () {
-      if (sourceImageData && posterizedResult) {
-        drawImageDataToCanvas(sourceImageData, originalCanvas);
-        drawImageDataToCanvas(posterizedResult.imageData, resultCanvas);
-      }
-    }, 150);
-  });
 })();
