@@ -214,6 +214,12 @@
     }, 'image/png');
   }
 
+  // Expose shell objects globally (used by tool modules)
+  window.ImageManager = ImageManager;
+  window.ToolShell = ToolShell;
+  window.drawImageDataToCanvas = drawImageDataToCanvas;
+  window.downloadImageData = downloadImageData;
+
   // ═══════════════════════════════════════════════════════
   //  Initialize shell
   // ═══════════════════════════════════════════════════════
@@ -221,130 +227,6 @@
   var tabBar = document.getElementById('tab-bar');
   var viewsContainer = document.getElementById('tool-views');
   ToolShell.init(tabBar, viewsContainer);
-
-  // ═══════════════════════════════════════════════════════
-  //  Tool: Posterize
-  // ═══════════════════════════════════════════════════════
-
-  ToolShell.register({
-    id: 'posterize',
-    name: 'Value Posterizer',
-    icon: '\uD83C\uDFA8',  // 🎨
-
-    mount: function (container) {
-      var valueSlider = document.getElementById('value-slider');
-      var valueLabel = document.getElementById('value-label');
-      var modeRadios = document.getElementsByName('mode');
-      var downloadBtn = document.getElementById('download-btn');
-      var originalCanvas = document.getElementById('original-canvas');
-      var resultCanvas = document.getElementById('result-canvas');
-      var histogramCanvas = document.getElementById('histogram-canvas');
-
-      var _lastResult = null;
-
-      function getN() {
-        return parseInt(valueSlider.value, 10);
-      }
-
-      function getMode() {
-        for (var i = 0; i < modeRadios.length; i++) {
-          if (modeRadios[i].checked) return modeRadios[i].value;
-        }
-        return 'grayscale';
-      }
-
-      function render() {
-        var imageData = ImageManager.getImageData();
-        if (!imageData) return;
-
-        var N = getN();
-        var mode = getMode();
-        valueLabel.textContent = N;
-
-        _lastResult = posterize(imageData, N, mode);
-
-        drawImageDataToCanvas(imageData, originalCanvas);
-        drawImageDataToCanvas(_lastResult.imageData, resultCanvas);
-        drawHistogram(histogramCanvas, _lastResult.histogram, N);
-      }
-
-      // Replace process with our render function
-      // (We override the tool's process binding)
-      ToolShell._tools['posterize'].process = function (imageData) {
-        drawImageDataToCanvas(imageData, originalCanvas);
-        render();
-      };
-
-      valueSlider.addEventListener('input', render);
-      for (var i = 0; i < modeRadios.length; i++) {
-        modeRadios[i].addEventListener('change', render);
-      }
-
-      downloadBtn.addEventListener('click', function () {
-        if (_lastResult) {
-          downloadImageData(_lastResult.imageData, 'posterized.png');
-        }
-      });
-    },
-
-    process: function (imageData) {
-      // Overridden in mount() — no-op here
-    }
-  });
-
-  // ═══════════════════════════════════════════════════════
-  //  Tool: Sketch
-  // ═══════════════════════════════════════════════════════
-
-  ToolShell.register({
-    id: 'sketch',
-    name: 'Rough Sketch',
-    icon: '\u270F\uFE0F',  // ✏️
-
-    mount: function (container) {
-      var sketchCanvas = document.getElementById('sketch-canvas');
-      var edgeThreshold = document.getElementById('edge-threshold');
-      var edgeThresholdLabel = document.getElementById('edge-threshold-label');
-      var edgeInvert = document.getElementById('edge-invert');
-      var downloadSketchBtn = document.getElementById('download-sketch-btn');
-
-      var _sketchImageData = null;
-
-      function renderSketch() {
-        var imageData = ImageManager.getImageData();
-        if (!imageData) return;
-
-        var threshold = parseInt(edgeThreshold.value, 10);
-        var invert = edgeInvert.checked;
-        edgeThresholdLabel.textContent = threshold;
-
-        _sketchImageData = detectEdges(imageData, {
-          threshold: threshold,
-          invert: invert
-        });
-
-        drawImageDataToCanvas(_sketchImageData, sketchCanvas);
-      }
-
-      // Override process
-      ToolShell._tools['sketch'].process = function (imageData) {
-        renderSketch();
-      };
-
-      edgeThreshold.addEventListener('input', renderSketch);
-      edgeInvert.addEventListener('change', renderSketch);
-
-      downloadSketchBtn.addEventListener('click', function () {
-        if (_sketchImageData) {
-          downloadImageData(_sketchImageData, 'sketch.png');
-        }
-      });
-    },
-
-    process: function (imageData) {
-      // Overridden in mount()
-    }
-  });
 
   // ═══════════════════════════════════════════════════════
   //  File input — triggers ImageManager

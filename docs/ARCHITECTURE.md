@@ -95,6 +95,8 @@ painting-tools/
 ├── posterize.js        # Pure function: posterization algorithm
 ├── edgeDetect.js       # Pure function: Sobel edge detection → sketch
 ├── histogram.js        # Pure function: histogram rendering
+├── posterizeTool.js    # Tool module: posterization UI wiring
+├── sketchTool.js       # Tool module: edge detection UI wiring
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
@@ -112,10 +114,12 @@ painting-tools/
 
 | Module | Responsibility | Contract |
 |--------|---------------|----------|
-| `app.js` | `ImageManager`, `ToolShell`, canvas helpers, tool registrations | `ImageManager.load(file)`, `ImageManager.getImageData()`, `ImageManager.onLoad(fn)`. `ToolShell.register({id,name,icon,mount,process,unmount})`, `ToolShell.activate(id)`. |
+| `app.js` | `ImageManager`, `ToolShell`, canvas helpers | `ImageManager.load(file)`, `ImageManager.getImageData()`, `ImageManager.onLoad(fn)`. `ToolShell.register({id,name,icon,mount,process,unmount})`, `ToolShell.activate(id)`. |
 | `posterize.js` | `posterize(imageData, N, mode) → {imageData, histogram}` | Pure function. Takes pixel data, level count, and mode (`'grayscale'` or `'color'`). Returns posterized `ImageData` plus histogram bin counts. |
 | `edgeDetect.js` | `detectEdges(imageData, {threshold, invert}) → ImageData` | Pure function. Applies Sobel operator (3×3) for edge detection. Returns sketch-style `ImageData` (dark lines on light background). |
 | `histogram.js` | `drawHistogram(canvas, bins, N)` | Renders histogram bars on a given canvas. Each bar height = pixel count in that value band. |
+| `posterizeTool.js` | Tool module: registers posterization UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires slider, mode radios, histogram, and download. |
+| `sketchTool.js` | Tool module: registers sketch UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires threshold slider, invert checkbox, and download. |
 | `index.html` | Shell structure | File input, empty tab bar (populated by ToolShell), two tool view containers. Each tool's DOM lives in its `.tool-view` div. |
 | `style.css` | Responsive layout + tab bar | Tab bar styles, tool view layout, side-by-side on wide screens, stacked on narrow. |
 

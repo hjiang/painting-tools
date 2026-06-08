@@ -83,22 +83,25 @@ Add `ToolShell` to `app.js`:
 - `getImageData()` — proxy to ImageManager
 - Tab bar dynamically populated from registered tools
 
-### Phase 3–4: Migrate Existing Tools (later)
+### Phase 3–4: Migrate Existing Tools ✅ DONE
 - Extract posterization wiring into `posterizeTool.js`
 - Extract sketch wiring into `sketchTool.js`
-- Remove hardcoded tool UI from `index.html` (replace with tab bar + container)
+- App.js now only contains infrastructure (ImageManager, ToolShell, helpers)
 
-### Phase 5: Future Tools (later)
+### Phase 5: Future Tools
 New tools follow the pattern — no shell changes needed.
 
 ## Files Changed
 
 | File | Action | Description |
 |------|--------|-------------|
-| `app.js` | MODIFY | Add ImageManager + ToolShell, keep existing wiring |
-| `style.css` | MODIFY | Add tab bar styles |
-| `index.html` | MODIFY | Add tab bar container, content container |
+| `app.js` | MODIFY | Add ImageManager + ToolShell, expose helpers globally |
+| `style.css` | MODIFY | Add tab bar styles, remove sketch toggle styles |
+| `index.html` | MODIFY | Add tab bar + tool view containers, load new tool scripts |
+| `posterizeTool.js` | NEW | Posterization tool module (ToolShell.register) |
+| `sketchTool.js` | NEW | Sketch tool module (ToolShell.register) |
 | `docs/ARCHITECTURE.md` | MODIFY | Document new modular architecture |
+| `docs/plans/003-tool-registry.md` | NEW | This plan |
 
 ## Testing
 
@@ -108,8 +111,9 @@ New tools follow the pattern — no shell changes needed.
 
 ## Acceptance Criteria
 
-- [ ] ImageManager loads and shares image across the app
-- [ ] ToolShell registry works — tools can register, activate
-- [ ] Existing posterization, sketch, and histogram functionality unchanged
-- [ ] Tab bar renders with registered tools
-- [ ] Adding a new tool requires only: tool JS file + `<script>` tag
+- [x] ImageManager loads and shares image across the app
+- [x] ToolShell registry works — tools can register, activate
+- [x] Existing posterization, sketch, and histogram functionality unchanged
+- [x] Tab bar renders with registered tools
+- [x] Adding a new tool requires only: tool JS file + `<script>` tag + view `<div>`
+- [x] All 193 unit tests pass
