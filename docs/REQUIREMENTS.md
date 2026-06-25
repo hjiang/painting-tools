@@ -58,7 +58,17 @@ Overlay a configurable grid on the uploaded photo to aid accurate initial sketch
   - Dims margins outside the grid area
 - Download gridded photo at original resolution as PNG
 
-### F7: Layer Isolation (Stretch Goal)
+### F7: Image Lightening
+Lighten the uploaded photo by blending it toward white. Useful for printing
+reference images that consume less ink and are easier to mark up with pencil
+or paint.
+- Blends every pixel toward white by a configurable percentage (0–100%)
+- 0% = original image, 100% = pure white
+- Preserves the original colors (just fades them)
+- Side-by-side comparison of original vs lightened
+- Download the lightened image at original resolution as PNG
+
+### F8: Layer Isolation (Stretch Goal)
 For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 

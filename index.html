@@ -157,6 +157,36 @@
         </div>
       </div>
 
+      <!-- ── Lighten Tool View ─────────────────────── -->
+      <div class="tool-view hidden" id="tool-lighten">
+        <div class="canvas-pair">
+          <div class="canvas-box">
+            <h3>Original</h3>
+            <canvas id="lighten-original-canvas"></canvas>
+          </div>
+          <div class="canvas-box">
+            <h3>Lightened</h3>
+            <canvas id="lighten-result-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="control-row">
+            <label for="lighten-amount" class="control-label">
+              Amount: <strong id="lighten-amount-label">40%</strong>
+            </label>
+            <input type="range" id="lighten-amount" min="0" max="100" value="40" step="1">
+            <div class="slider-ticks">
+              <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="download-section">
+          <button id="download-lighten-btn" class="download-btn">⬇ Download Lightened PNG</button>
+        </div>
+      </div>
+
       <!-- ── Sketch Tool View ─────────────────────── -->
       <div class="tool-view hidden" id="tool-sketch">
         <div class="canvas-box sketch-canvas-box">
@@ -189,10 +219,12 @@
   <script src="posterize.js"></script>
   <script src="histogram.js"></script>
   <script src="edgeDetect.js"></script>
+  <script src="lighten.js"></script>
   <script src="gridOverlay.js"></script>
   <script src="app.js"></script>
   <script src="posterizeTool.js"></script>
   <script src="sketchTool.js"></script>
   <script src="gridTool.js"></script>
+  <script src="lightenTool.js"></script>
 </body>
 </html>

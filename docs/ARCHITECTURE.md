@@ -20,29 +20,30 @@ The app uses a **tool registry pattern**: a shared shell manages image loading
 and tab switching, while each tool self-registers and owns its own UI + logic.
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                        Browser                           │
-│                                                          │
-│  ┌──────────┐   ┌──────────────────────────────────┐     │
-│  │ File     │──▶│         ImageManager             │     │
-│  │ Input    │   │  (load once, share imageData)    │     │
-│  └──────────┘   └──────────┬───────────────────────┘     │
-│                            │ notify                      │
-│                            ▼                             │
-│  ┌──────────────────────────────────────────────────┐    │
-│  │              ToolShell (registry + tabs)          │    │
-│  │  activate('posterize')  activate('grid')  activate('sketch')  ...  │    │
-│  └────────┬──────────────────┬──────────────┬───────────────────┘    │
-│           │ mount/process    │              │ mount/process          │
-│           ▼                  ▼              ▼                        │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
-│  │  Posterize Tool  │  │   Grid Tool      │  │   Sketch Tool    │   │
-│  │  ┌────────────┐  │  │  ┌────────────┐  │  │  ┌────────────┐  │   │
-│  │  │ posterize()│  │  │  │ drawGrid() │  │  │  │detectEdges()│  │   │
-│  │  │ histogram()│  │  │  └────────────┘  │  │  └────────────┘  │   │
-│  │  └────────────┘  │  └──────────────────┘  └──────────────────┘   │
-│  └──────────────────┘                                               │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        Browser                                   │
+│                                                                  │
+│  ┌──────────┐   ┌──────────────────────────────────┐            │
+│  │ File     │──▶│         ImageManager             │            │
+│  │ Input    │   │  (load once, share imageData)    │            │
+│  └──────────┘   └──────────┬───────────────────────┘            │
+│                            │ notify                              │
+│                            ▼                                     │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              ToolShell (registry + tabs)                   │   │
+│  │  activate('posterize') activate('grid') activate('sketch')│   │
+│  │  activate('lighten') ...                                  │   │
+│  └────────┬──────────────┬──────────────┬──────────┬─────────┘   │
+│           │ mount/process│              │          │             │
+│           ▼              ▼              ▼          ▼             │
+│  ┌──────────────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│  │  Posterize Tool  │  │ Grid Tool│  │Sketch Tool│ │Lighten   │  │
+│  │  ┌────────────┐  │  │ drawGrid │  │detectEdges│ │ lighten()│  │
+│  │  │ posterize()│  │  └──────────┘  └──────────┘  └──────────┘  │
+│  │  │ histogram()│  │                                             │
+│  │  └────────────┘  │                                             │
+│  └──────────────────┘                                             │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
@@ -85,6 +86,23 @@ Example for N=3: bands are [0–85), [85–170), [170–255] → outputs 42, 127
 This preserves the color identity of objects while forcing them into N value
 levels — useful for planning a painting with a limited palette.
 
+### Algorithm: Image Lightening
+
+Blends each pixel toward white by a configurable percentage:
+
+```
+factor = amount / 100
+for each pixel:
+    R' = R + (255 - R) * factor
+    G' = G + (255 - G) * factor
+    B' = B + (255 - B) * factor
+    A' = A  (alpha preserved)
+```
+
+- 0% = original image, 100% = pure white
+- Preserves color relationships while reducing ink density
+- Useful for printing faint reference images to mark up
+
 ### File Structure
 
 ```
@@ -94,11 +112,13 @@ painting-tools/
 ├── app.js              # Shared infrastructure: ImageManager, ToolShell, helpers
 ├── posterize.js        # Pure function: posterization algorithm
 ├── edgeDetect.js       # Pure function: Sobel edge detection → sketch
+├── lighten.js          # Pure function: blend toward white by percentage
 ├── histogram.js        # Pure function: histogram rendering
 ├── gridOverlay.js      # Pure function: grid math + Canvas 2D drawing
 ├── posterizeTool.js    # Tool module: posterization UI wiring
 ├── sketchTool.js       # Tool module: edge detection UI wiring
 ├── gridTool.js         # Tool module: grid overlay UI wiring
+├── lightenTool.js      # Tool module: lighten UI wiring
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
@@ -110,7 +130,8 @@ painting-tools/
     ├── posterize.test.js
     ├── edgeDetect.test.js
     ├── histogram.test.js
-    └── gridOverlay.test.js
+    ├── gridOverlay.test.js
+    └── lighten.test.js
 ```
 
 ### Key Modules
@@ -121,11 +142,13 @@ painting-tools/
 | `posterize.js` | `posterize(imageData, N, mode) → {imageData, histogram}` | Pure function. Takes pixel data, level count, and mode (`'grayscale'` or `'color'`). Returns posterized `ImageData` plus histogram bin counts. |
 | `gridOverlay.js` | `computeGridLayout(w, h, opts) → {...}`, `drawGrid(ctx, w, h, opts)` | Pure functions. Computes cell dimensions and centering offsets; draws grid lines, labels, diagonals, and margin dimming via Canvas 2D compositing. |
 | `edgeDetect.js` | `detectEdges(imageData, {threshold, invert}) → ImageData` | Pure function. Applies Sobel operator (3×3) for edge detection. Returns sketch-style `ImageData` (dark lines on light background). |
+| `lighten.js` | `lighten(imageData, amount) → { imageData }` | Pure function. Blends each pixel toward white by a percentage (0–100%). 0% = no change, 100% = pure white. Alpha preserved. |
 | `histogram.js` | `drawHistogram(canvas, bins, N)` | Renders histogram bars on a given canvas. Each bar height = pixel count in that value band. |
 | `posterizeTool.js` | Tool module: registers posterization UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires slider, mode radios, histogram, and download. |
 | `gridTool.js` | Tool module: registers grid overlay UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires rows/cols sliders (with square-cell auto-sync), line color, width, style, labels, diagonals, square cells toggle, and download. |
 | `sketchTool.js` | Tool module: registers sketch UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires threshold slider, invert checkbox, and download. |
-| `index.html` | Shell structure | File input, empty tab bar (populated by ToolShell), two tool view containers. Each tool's DOM lives in its `.tool-view` div. |
+| `lightenTool.js` | Tool module: registers lighten UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires amount slider (0–100%), side-by-side canvases, and download. |
+| `index.html` | Shell structure | File input, empty tab bar (populated by ToolShell), tool view containers. Each tool's DOM lives in its `.tool-view` div. |
 | `style.css` | Responsive layout + tab bar | Tab bar styles, tool view layout, side-by-side on wide screens, stacked on narrow. |
 
 ### Tool Contract
@@ -156,5 +179,8 @@ to `app.js`, `style.css`, or existing tools.
 - **Unit tests** (`gridOverlay.test.js`): Test `computeGridLayout` grid math —
   normal mode, square-cells mode with various aspect ratios, centering offsets,
   and edge cases where image dimensions perfectly fit the grid.
+- **Unit tests** (`lighten.test.js`): Test `lighten` with 0%, 50%, 100% amounts
+  on known pixels, fractional amounts, alpha preservation, edge clamping,
+  color channels lightening independently, and image dimension preservation.
 - **Manual visual tests**: Load sample photos and verify grid rendering,
   label readability, margin dimming, and download output.
