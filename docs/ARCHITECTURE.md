@@ -56,6 +56,11 @@ and tab switching, while each tool self-registers and owns its own UI + logic.
 6. User switches tabs → `ToolShell.activate(id)` → new tool's `mount()` + `process()`
 7. User changes a tool's parameters → tool re-runs its algorithm directly
 8. Download: tool exports its computed `ImageData` as PNG blob
+9. **Promote**: User clicks "Use as New Reference" on a tool's output →
+   `ImageManager.setImageData(result, label)` replaces the source, preserving
+   the original in `_originalImageData`. All tools re-render with the new
+   source, enabling chaining (e.g., lighten → posterize → grid). A banner
+   shows the modified state with a "Reset to Original" button.
 
 ### Algorithm: Value Posterization
 

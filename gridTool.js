@@ -177,6 +177,19 @@ ToolShell.register({
     dashedCheck.addEventListener('change', render);
     diagonalsCheck.addEventListener('change', render);
 
+    // ── Promote button ─────────────────────────
+
+    var promoteBtn = createPromoteButton(
+      function () {
+        if (!_offscreenCanvas) return null;
+        return _offscreenCanvas.getContext('2d').getImageData(0, 0, _offscreenCanvas.width, _offscreenCanvas.height);
+      },
+      function () {
+        return 'Grid (' + parseInt(rowsSlider.value, 10) + '×' + parseInt(colsSlider.value, 10) + ')';
+      }
+    );
+    document.getElementById('grid-promote-spot').appendChild(promoteBtn);
+
     downloadBtn.addEventListener('click', function () {
       if (_offscreenCanvas) {
         _offscreenCanvas.toBlob(function (blob) {

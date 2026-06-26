@@ -284,6 +284,58 @@ header h1 {
   outline: 1px solid #7c8aff55;
 }
 
+/* ── Source Banner ──────────────────────────── */
+.source-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 1100px;
+  margin: 0.75rem auto 0;
+  padding: 0.5rem 1rem;
+  background: #1f2a1f;
+  border: 1px solid #3a5a3a;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.source-banner-label {
+  color: #7bd88f;
+}
+
+.source-reset-btn {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  border: 1px solid #3a5a3a;
+  border-radius: 6px;
+  background: #162016;
+  color: #7bd88f;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.source-reset-btn:hover {
+  background: #2a3a2a;
+}
+
+/* ── Promote Button ────────────────────────── */
+.promote-btn {
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  border: 1px solid #3a3a55;
+  border-radius: 6px;
+  background: #1f1f38;
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  margin-right: 0.5rem;
+}
+
+.promote-btn:hover {
+  background: #2a2f48;
+  border-color: #7c8aff;
+}
+
 /* ── Download ──────────────────────────────── */
 .download-section {
   margin-top: 1rem;

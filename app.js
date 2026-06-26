@@ -11,8 +11,10 @@
   // ═══════════════════════════════════════════════════════
 
   var ImageManager = {
-    _imageData: null,   // ImageData at original resolution
-    _listeners: [],     // callbacks called when a new image is loaded
+    _imageData: null,         // ImageData at original resolution (current source)
+    _originalImageData: null, // preserved copy of the initially uploaded image
+    _modifiedLabel: '',       // description when source has been replaced
+    _listeners: [],           // callbacks called when a new image is loaded
 
     /**
      * Load an image file, decode it to ImageData, and notify listeners.
@@ -31,6 +33,9 @@
           var ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
           ImageManager._imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          ImageManager._originalImageData = null;
+          ImageManager._modifiedLabel = '';
+          _updateSourceBanner();
 
           // Notify all listeners
           for (var i = 0; i < ImageManager._listeners.length; i++) {
@@ -48,6 +53,52 @@
     },
 
     /**
+     * Replace the current source image with processed output.
+     * Preserves the original so reset() can restore it.
+     * @param {ImageData} imageData
+     * @param {string} label - description e.g. "Posterized (5 values)"
+     */
+    setImageData: function (imageData, label) {
+      if (!imageData) return;
+      // Preserve the original on first promotion so reset() works
+      if (!ImageManager._originalImageData) {
+        ImageManager._originalImageData = ImageManager._imageData;
+      }
+      ImageManager._imageData = imageData;
+      ImageManager._modifiedLabel = label || 'Modified';
+      _updateSourceBanner();
+
+      for (var i = 0; i < ImageManager._listeners.length; i++) {
+        ImageManager._listeners[i](ImageManager._imageData);
+      }
+    },
+
+    /**
+     * Restore the original uploaded image. No-op if not modified.
+     */
+    reset: function () {
+      if (!ImageManager._originalImageData) return;
+      ImageManager._imageData = ImageManager._originalImageData;
+      ImageManager._originalImageData = null;
+      ImageManager._modifiedLabel = '';
+      _updateSourceBanner();
+
+      for (var i = 0; i < ImageManager._listeners.length; i++) {
+        ImageManager._listeners[i](ImageManager._imageData);
+      }
+    },
+
+    /** @returns {boolean} */
+    isModified: function () {
+      return !!ImageManager._originalImageData;
+    },
+
+    /** @returns {string} */
+    getModifiedLabel: function () {
+      return ImageManager._modifiedLabel;
+    },
+
+    /**
      * Register a callback for new image loads.
      * @param {function(ImageData)} fn
      */
@@ -55,6 +106,20 @@
       ImageManager._listeners.push(fn);
     }
   };
+
+  // ── Source image banner ───────────────────────────
+
+  function _updateSourceBanner() {
+    var banner = document.getElementById('source-banner');
+    if (!banner) return;
+    if (ImageManager.isModified()) {
+      banner.classList.remove('hidden');
+      var labelEl = banner.querySelector('.source-banner-label');
+      if (labelEl) labelEl.textContent = 'Source: ' + ImageManager.getModifiedLabel();
+    } else {
+      banner.classList.add('hidden');
+    }
+  }
 
   // ═══════════════════════════════════════════════════════
   //  ToolShell — registry + tab switching
@@ -214,11 +279,37 @@
     }, 'image/png');
   }
 
+  // ═══════════════════════════════════════════════════════
+  //  Promote button helper (used by tool modules)
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * Create a "Use as New Reference" button that promotes the tool's
+   * processed output to become the new source image for all tools.
+   * @param {function(): ImageData|null} getResultFn
+   * @param {function(): string} labelFn
+   * @returns {HTMLButtonElement}
+   */
+  function createPromoteButton(getResultFn, labelFn) {
+    var btn = document.createElement('button');
+    btn.className = 'promote-btn';
+    btn.textContent = '↻ Use as New Reference';
+    btn.title = 'Replace the source image with this processed output so other tools can use it';
+    btn.addEventListener('click', function () {
+      var result = getResultFn();
+      if (result) {
+        ImageManager.setImageData(result, labelFn());
+      }
+    });
+    return btn;
+  }
+
   // Expose shell objects globally (used by tool modules)
   window.ImageManager = ImageManager;
   window.ToolShell = ToolShell;
   window.drawImageDataToCanvas = drawImageDataToCanvas;
   window.downloadImageData = downloadImageData;
+  window.createPromoteButton = createPromoteButton;
 
   // ═══════════════════════════════════════════════════════
   //  Initialize shell
@@ -227,6 +318,14 @@
   var tabBar = document.getElementById('tab-bar');
   var viewsContainer = document.getElementById('tool-views');
   ToolShell.init(tabBar, viewsContainer);
+
+  // Wire up the source-banner reset button
+  var resetBtn = document.getElementById('source-reset-btn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      ImageManager.reset();
+    });
+  }
 
   // ═══════════════════════════════════════════════════════
   //  File input — triggers ImageManager

@@ -42,6 +42,14 @@ ToolShell.register({
 
     amountSlider.addEventListener('input', render);
 
+    // ── Promote button ─────────────────────────
+
+    var promoteBtn = createPromoteButton(
+      function () { return _lastResult ? _lastResult.imageData : null; },
+      function () { return 'Lightened (' + getAmount() + '%)'; }
+    );
+    document.getElementById('lighten-promote-spot').appendChild(promoteBtn);
+
     downloadBtn.addEventListener('click', function () {
       if (_lastResult) {
         downloadImageData(_lastResult.imageData, 'lightened.png');

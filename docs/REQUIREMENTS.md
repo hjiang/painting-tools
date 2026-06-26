@@ -72,7 +72,15 @@ or paint.
 For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 
-### F9: Color Mixer / Paint Recipe
+### F9: Promote Output to Reference Image
+After processing an image with any tool, promote the output to become the new
+source image for all tools. Enables operation chaining — e.g., lighten then
+posterize, or posterize then add a grid.
+- "Use as New Reference" button in each tool's download section
+- Source banner shows what was applied and offers a "Reset to Original" button
+- Preserves the originally uploaded image for reset at any time
+
+### F10: Color Mixer / Paint Recipe
 Sample a color from the photo and show how to mix it from a paint palette.
 - Click the image to sample the **average color** of pixels inside a small
   circle (configurable radius).

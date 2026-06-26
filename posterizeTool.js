@@ -56,6 +56,14 @@ ToolShell.register({
       modeRadios[i].addEventListener('change', render);
     }
 
+    // ── Promote button ─────────────────────────
+
+    var promoteBtn = createPromoteButton(
+      function () { return _lastResult ? _lastResult.imageData : null; },
+      function () { return 'Posterized (' + getN() + ' values, ' + getMode() + ')'; }
+    );
+    document.getElementById('posterize-promote-spot').appendChild(promoteBtn);
+
     downloadBtn.addEventListener('click', function () {
       if (_lastResult) {
         downloadImageData(_lastResult.imageData, 'posterized.png');

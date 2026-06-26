@@ -26,6 +26,12 @@
     <!-- Tool tab bar (hidden until image loaded) -->
     <nav id="tab-bar" class="hidden"></nav>
 
+    <!-- Source banner: appears when output has been promoted to new source -->
+    <div id="source-banner" class="source-banner hidden">
+      <span class="source-banner-label"></span>
+      <button id="source-reset-btn" class="source-reset-btn">↩ Reset to Original</button>
+    </div>
+
     <!-- Tool views (shown/hidden by tab selection) -->
     <section id="tool-views" class="hidden">
       <!-- ── Posterize Tool View ───────────────────── -->
@@ -74,8 +80,9 @@
           <canvas id="histogram-canvas" width="600" height="120"></canvas>
         </div>
 
-        <!-- Download posterized -->
+        <!-- Promote + download -->
         <div class="download-section">
+          <span id="posterize-promote-spot"></span>
           <button id="download-btn" class="download-btn">⬇ Download Posterized PNG</button>
         </div>
       </div>
@@ -153,6 +160,7 @@
         </div>
 
         <div class="download-section">
+          <span id="grid-promote-spot"></span>
           <button id="download-grid-btn" class="download-btn">⬇ Download Gridded PNG</button>
         </div>
       </div>
@@ -183,6 +191,7 @@
         </div>
 
         <div class="download-section">
+          <span id="lighten-promote-spot"></span>
           <button id="download-lighten-btn" class="download-btn">⬇ Download Lightened PNG</button>
         </div>
       </div>
@@ -210,6 +219,7 @@
         </div>
 
         <div class="download-section">
+          <span id="sketch-promote-spot"></span>
           <button id="download-sketch-btn" class="download-btn">⬇ Download Sketch PNG</button>
         </div>
       </div>

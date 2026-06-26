@@ -70,7 +70,15 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    0% = original image, 100% = pure white. Useful for printing faint
    reference images that use less ink and accept pencil/paint markup.
 
-8. **Color mixing is subtractive (Kubelka-Munk), not additive.** The photo is
+8. **Output promotion**: any tool's processed output can be promoted to become
+   the new source image via `ImageManager.setImageData(result, label)`. The
+   original upload is preserved in `_originalImageData` so `reset()` can restore
+   it. A source banner between the tab bar and tool views shows the modified state
+   with a "Reset to Original" button. Each tool creates a "Use as New Reference"
+   button via the shared `createPromoteButton(getResultFn, labelFn)` helper.
+   This enables operation chaining (e.g., lighten → posterize → grid).
+
+9. **Color mixing is subtractive (Kubelka-Munk), not additive.** The photo is
    transmitted light (additive RGB); paint is reflected light (subtractive).
    So `mixPaints` does NOT average RGB — it linearizes each channel, converts
    reflectance to `K/S = (1-R)²/(2R)`, mixes `K/S` by weight, then inverts
@@ -105,7 +113,8 @@ painting-tools/
 │       ├── 001-initial-mvp.md
 │       ├── 002-edge-detection-sketch.md
 │       ├── 003-tool-registry.md
-│       └── 004-grid-overlay.md
+│       ├── 004-grid-overlay.md
+│       └── 005-promote-output.md
 └── tests/
     ├── posterize.test.js
     ├── edgeDetect.test.js

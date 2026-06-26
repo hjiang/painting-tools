@@ -41,6 +41,17 @@ ToolShell.register({
     edgeThreshold.addEventListener('input', renderSketch);
     edgeInvert.addEventListener('change', renderSketch);
 
+    // ── Promote button ─────────────────────────
+
+    var promoteBtn = createPromoteButton(
+      function () { return _sketchImageData; },
+      function () {
+        return 'Sketch (threshold ' + parseInt(edgeThreshold.value, 10) +
+          (edgeInvert.checked ? ', inverted' : '') + ')';
+      }
+    );
+    document.getElementById('sketch-promote-spot').appendChild(promoteBtn);
+
     downloadSketchBtn.addEventListener('click', function () {
       if (_sketchImageData) {
         downloadImageData(_sketchImageData, 'sketch.png');
