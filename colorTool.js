@@ -9,7 +9,8 @@ ToolShell.register({
   icon: '\uD83C\uDFA8',  // 🎨
 
   mount: function (container) {
-    var STORAGE_KEY = 'painting-tools.palette.v1';
+    var PALETTE_STORAGE_KEY = 'painting-tools.palette.v1';
+    var RADIUS_STORAGE_KEY = 'painting-tools.color.radius';
 
     var mainCanvas = document.getElementById('color-canvas');
     var overlay = document.getElementById('color-overlay');
@@ -31,7 +32,7 @@ ToolShell.register({
 
     function loadPalette() {
       try {
-        var raw = localStorage.getItem(STORAGE_KEY);
+        var raw = localStorage.getItem(PALETTE_STORAGE_KEY);
         if (raw) {
           var parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length) return parsed;
@@ -42,13 +43,30 @@ ToolShell.register({
 
     function savePalette() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(palette));
+        localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(palette));
       } catch (e) { /* storage unavailable — keep in memory only */ }
     }
 
     var palette = loadPalette();
 
-    // ── Sample size ──────────────────────────────────
+    // ── Sample size persistence ─────────────────────
+
+    function loadRadius() {
+      try {
+        var saved = localStorage.getItem(RADIUS_STORAGE_KEY);
+        if (saved !== null) {
+          var val = parseInt(saved, 10);
+          if (!isNaN(val)) return val;
+        }
+      } catch (e) { /* ignore */ }
+      return parseInt(radiusSlider.value, 10); // fall back to HTML default
+    }
+
+    function saveRadius(val) {
+      try {
+        localStorage.setItem(RADIUS_STORAGE_KEY, String(val));
+      } catch (e) { /* storage unavailable */ }
+    }
 
     function getRadiusPx() {
       return parseInt(radiusSlider.value, 10);
@@ -231,7 +249,9 @@ ToolShell.register({
     });
 
     radiusSlider.addEventListener('input', function () {
-      radiusLabel.textContent = getRadiusPx() + ' px';
+      var val = getRadiusPx();
+      radiusLabel.textContent = val + ' px';
+      saveRadius(val);
       runMatch();
     });
 
@@ -249,6 +269,10 @@ ToolShell.register({
     });
 
     renderPalette();
+
+    // Restore saved circle size.
+    radiusSlider.value = loadRadius();
+    radiusLabel.textContent = loadRadius() + ' px';
 
     // Called by the shell on image load / resize.
     ToolShell._tools['color'].process = function (imageData) {
