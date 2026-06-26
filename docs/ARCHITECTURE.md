@@ -108,6 +108,40 @@ for each pixel:
 - Preserves color relationships while reducing ink density
 - Useful for printing faint reference images to mark up
 
+### Algorithm: Edge Detection (Canny)
+
+Full Canny edge detection pipeline for clean, single-pixel edge maps:
+
+```
+Source Image → Grayscale (Rec. 601)
+  → Gaussian Blur (separable 1D convolution)
+  → Sobel Gradient (magnitude + 8-sector direction)
+  → Non-Maximum Suppression (ahead/behind tiebreaker)
+  → Double-Threshold Hysteresis (BFS flood-fill)
+  → Output
+```
+
+1. **Gaussian blur**: Separable 1D convolution (horizontal then vertical pass)
+   with kernel size `2·ceil(3σ)+1` (clamped to max 31). σ=0 bypasses blur.
+
+2. **Sobel gradient**: 3×3 Sobel kernels produce gradient magnitude
+   (clamped 0–255) and direction quantized to 8 sectors (0–7), encoding both
+   angle and sign. This allows NMS to distinguish which side of an edge is
+   "ahead" in the gradient direction.
+
+3. **Non-Maximum Suppression (NMS)**: For each pixel, compare magnitude with
+   the "ahead" neighbor (in gradient direction) and "behind" neighbor
+   (opposite). Keep only if `m > ahead && m >= behind`. The strict check on
+   "ahead" ensures consistent single-pixel thinning at perfectly sharp step
+   edges.
+
+4. **Double-threshold hysteresis**:
+   - Strong edges (> `threshold`) are always kept
+   - Weak edges (> `threshold × 0.4`, ≤ `threshold`) are kept only if
+     8-connected to a strong edge (BFS flood-fill)
+   - Everything else suppressed
+   This eliminates isolated noise specks while preserving continuous contours.
+
 ### Algorithm: Subtractive Paint Mixing (Color Mixer)
 
 A screen emits **additive** light (RGB), so averaging two screen colors
@@ -144,7 +178,7 @@ painting-tools/
 ├── style.css           # Layout, tab bar, tool styling, responsive
 ├── app.js              # Shared infrastructure: ImageManager, ToolShell, helpers
 ├── posterize.js        # Pure function: posterization algorithm
-├── edgeDetect.js       # Pure function: Sobel edge detection → sketch
+├── edgeDetect.js       # Pure function: Canny edge detection → clean sketch
 ├── lighten.js          # Pure function: blend toward white by percentage
 ├── histogram.js        # Pure function: histogram rendering
 ├── gridOverlay.js      # Pure function: grid math + Canvas 2D drawing
@@ -177,7 +211,7 @@ painting-tools/
 | `app.js` | `ImageManager`, `ToolShell`, canvas helpers | `ImageManager.load(file)`, `ImageManager.getImageData()`, `ImageManager.onLoad(fn)`. `ToolShell.register({id,name,icon,mount,process,unmount})`, `ToolShell.activate(id)`. |
 | `posterize.js` | `posterize(imageData, N, mode) → {imageData, histogram}` | Pure function. Takes pixel data, level count, and mode (`'grayscale'` or `'color'`). Returns posterized `ImageData` plus histogram bin counts. |
 | `gridOverlay.js` | `computeGridLayout(w, h, opts) → {...}`, `drawGrid(ctx, w, h, opts)` | Pure functions. Computes cell dimensions and centering offsets; draws grid lines, labels, diagonals, and margin dimming via Canvas 2D compositing. |
-| `edgeDetect.js` | `detectEdges(imageData, {threshold, invert}) → ImageData` | Pure function. Applies Sobel operator (3×3) for edge detection. Returns sketch-style `ImageData` (dark lines on light background). |
+| `edgeDetect.js` | `detectEdges(imageData, {threshold, blur, invert}) → ImageData` | Pure function. Full Canny pipeline (Gaussian blur → Sobel → NMS → hysteresis). Returns clean single-pixel edge sketch on light/dark background. |
 | `lighten.js` | `lighten(imageData, amount) → { imageData }` | Pure function. Blends each pixel toward white by a percentage (0–100%). 0% = no change, 100% = pure white. Alpha preserved. |
 | `colorMix.js` | `averageColor`, `mixPaints` (Kubelka-Munk), `rgbToLab`, `deltaE`, `matchColor`, `DEFAULT_PALETTE` | Pure functions. Subtractive paint mixing in reflectance space + CIELAB ΔE recipe matching against a configurable palette. |
 | `histogram.js` | `drawHistogram(canvas, bins, N)` | Renders histogram bars on a given canvas. Each bar height = pixel count in that value band. |
@@ -211,9 +245,11 @@ to `app.js`, `style.css`, or existing tools.
 
 - **Unit tests** (`posterize.test.js`): Test grayscale and color posterization
   with known inputs. Verify histogram bin counts. Run with Node.js.
-- **Unit tests** (`edgeDetect.test.js`): Test Sobel edge detection with uniform
-  images, sharp edges (vertical/horizontal/diagonal), threshold behavior,
-  invert mode, alpha preservation, and small inputs.
+- **Unit tests** (`edgeDetect.test.js`): Test each Canny pipeline stage —
+  Gaussian kernel, separable blur, Sobel with 8-sector direction, non-maximum
+  suppression, hysteresis connectivity — plus integration tests for uniform
+  images, sharp edges, invert mode, alpha preservation, noise suppression,
+  and small inputs.
 - **Unit tests** (`gridOverlay.test.js`): Test `computeGridLayout` grid math —
   normal mode, square-cells mode with various aspect ratios, centering offsets,
   and edge cases where image dimensions perfectly fit the grid.

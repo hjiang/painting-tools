@@ -10,16 +10,36 @@ ToolShell.register({
 
   mount: function (container) {
     var sketchCanvas = document.getElementById('sketch-canvas');
+    var edgeBlur = document.getElementById('edge-blur');
+    var edgeBlurLabel = document.getElementById('edge-blur-label');
     var edgeThreshold = document.getElementById('edge-threshold');
     var edgeThresholdLabel = document.getElementById('edge-threshold-label');
     var edgeInvert = document.getElementById('edge-invert');
     var downloadSketchBtn = document.getElementById('download-sketch-btn');
 
+    var BLUR_KEY = 'painting-tools.sketch.blur';
     var THRESHOLD_KEY = 'painting-tools.sketch.threshold';
 
     var _sketchImageData = null;
 
     // ── Settings persistence ─────────────────────
+
+    function loadFloat(key, fallback) {
+      try {
+        var saved = localStorage.getItem(key);
+        if (saved !== null) {
+          var val = parseFloat(saved);
+          if (!isNaN(val)) return val;
+        }
+      } catch (e) { /* ignore */ }
+      return fallback;
+    }
+
+    function saveFloat(key, val) {
+      try {
+        localStorage.setItem(key, String(val));
+      } catch (e) { /* storage unavailable */ }
+    }
 
     function loadThreshold() {
       try {
@@ -38,7 +58,9 @@ ToolShell.register({
       } catch (e) { /* storage unavailable */ }
     }
 
-    // Restore saved threshold on mount
+    // Restore saved settings on mount
+    edgeBlur.value = loadFloat(BLUR_KEY, parseFloat(edgeBlur.value));
+    edgeBlurLabel.textContent = parseFloat(edgeBlur.value).toFixed(1);
     edgeThreshold.value = loadThreshold();
     edgeThresholdLabel.textContent = edgeThreshold.value;
 
@@ -51,6 +73,7 @@ ToolShell.register({
       edgeThresholdLabel.textContent = threshold;
 
       _sketchImageData = detectEdges(imageData, {
+        blur: parseFloat(edgeBlur.value),
         threshold: threshold,
         invert: invert
       });
@@ -63,6 +86,12 @@ ToolShell.register({
       renderSketch();
     };
 
+    edgeBlur.addEventListener('input', function () {
+      var val = parseFloat(edgeBlur.value);
+      edgeBlurLabel.textContent = val.toFixed(1);
+      saveFloat(BLUR_KEY, val);
+      renderSketch();
+    });
     edgeThreshold.addEventListener('input', function () {
       saveThreshold(parseInt(edgeThreshold.value, 10));
       renderSketch();
@@ -74,7 +103,8 @@ ToolShell.register({
     var promoteBtn = createPromoteButton(
       function () { return _sketchImageData; },
       function () {
-        return 'Sketch (threshold ' + parseInt(edgeThreshold.value, 10) +
+        return 'Sketch (blur ' + parseFloat(edgeBlur.value).toFixed(1) +
+        ', threshold ' + parseInt(edgeThreshold.value, 10) +
           (edgeInvert.checked ? ', inverted' : '') + ')';
       }
     );

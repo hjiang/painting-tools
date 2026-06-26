@@ -247,6 +247,7 @@ header h1 {
   background: #111;
 }
 
+#edge-blur,
 #edge-threshold {
   flex: 1;
   max-width: 400px;
