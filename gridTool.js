@@ -24,8 +24,31 @@ ToolShell.register({
     var autoComputeCheck = document.getElementById('grid-auto-compute');
     var downloadBtn = document.getElementById('download-grid-btn');
 
+    var SQUARE_KEY = 'painting-tools.grid.squareCells';
+    var AUTO_KEY = 'painting-tools.grid.autoCompute';
+
     var _offscreenCanvas = null;  // full-res composite for download
     var _autoDim = null;           // which dim is auto-computed: 'rows', 'columns', or null
+
+    // ── Settings persistence ─────────────────────
+
+    function loadCheckbox(key, fallback) {
+      try {
+        var saved = localStorage.getItem(key);
+        if (saved !== null) return saved === 'true';
+      } catch (e) { /* ignore */ }
+      return fallback;
+    }
+
+    function saveCheckbox(key, val) {
+      try {
+        localStorage.setItem(key, String(val));
+      } catch (e) { /* storage unavailable */ }
+    }
+
+    // Restore saved settings on mount
+    squareCellsCheck.checked = loadCheckbox(SQUARE_KEY, squareCellsCheck.checked);
+    autoComputeCheck.checked = loadCheckbox(AUTO_KEY, autoComputeCheck.checked);
 
     // ── Helpers ──────────────────────────────────────
 
@@ -82,6 +105,11 @@ ToolShell.register({
     function render() {
       var imageData = ImageManager.getImageData();
       if (!imageData) return;
+
+      // Auto-compute on first render when both checkboxes are on
+      if (squareCellsCheck.checked && autoComputeCheck.checked && !_autoDim) {
+        syncSquareSliders('columns');
+      }
 
       var opts = getOptions();
       var w = imageData.width;
@@ -147,6 +175,7 @@ ToolShell.register({
     });
 
     squareCellsCheck.addEventListener('change', function () {
+      saveCheckbox(SQUARE_KEY, squareCellsCheck.checked);
       if (squareCellsCheck.checked && autoComputeCheck.checked) {
         syncSquareSliders('columns');
       } else {
@@ -156,6 +185,7 @@ ToolShell.register({
     });
 
     autoComputeCheck.addEventListener('change', function () {
+      saveCheckbox(AUTO_KEY, autoComputeCheck.checked);
       if (autoComputeCheck.checked && squareCellsCheck.checked) {
         syncSquareSliders('columns');
       } else {

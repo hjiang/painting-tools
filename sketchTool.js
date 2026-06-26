@@ -15,7 +15,32 @@ ToolShell.register({
     var edgeInvert = document.getElementById('edge-invert');
     var downloadSketchBtn = document.getElementById('download-sketch-btn');
 
+    var THRESHOLD_KEY = 'painting-tools.sketch.threshold';
+
     var _sketchImageData = null;
+
+    // ── Settings persistence ─────────────────────
+
+    function loadThreshold() {
+      try {
+        var saved = localStorage.getItem(THRESHOLD_KEY);
+        if (saved !== null) {
+          var val = parseInt(saved, 10);
+          if (!isNaN(val)) return val;
+        }
+      } catch (e) { /* ignore */ }
+      return parseInt(edgeThreshold.value, 10);
+    }
+
+    function saveThreshold(val) {
+      try {
+        localStorage.setItem(THRESHOLD_KEY, String(val));
+      } catch (e) { /* storage unavailable */ }
+    }
+
+    // Restore saved threshold on mount
+    edgeThreshold.value = loadThreshold();
+    edgeThresholdLabel.textContent = edgeThreshold.value;
 
     function renderSketch() {
       var imageData = ImageManager.getImageData();
@@ -38,7 +63,10 @@ ToolShell.register({
       renderSketch();
     };
 
-    edgeThreshold.addEventListener('input', renderSketch);
+    edgeThreshold.addEventListener('input', function () {
+      saveThreshold(parseInt(edgeThreshold.value, 10));
+      renderSketch();
+    });
     edgeInvert.addEventListener('change', renderSketch);
 
     // ── Promote button ─────────────────────────
