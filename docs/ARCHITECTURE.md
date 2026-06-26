@@ -1,4 +1,4 @@
-# Architecture: Painting Value Study Tool
+# Architecture: Painting Tools
 
 ## Technology Choice
 

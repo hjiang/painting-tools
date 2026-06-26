@@ -1,5 +1,5 @@
 // app.js
-// Painting Value Study — UI wiring.
+// Painting Tools — UI wiring.
 // Shared infrastructure: ImageManager, ToolShell, canvas helpers.
 // Tools self-register via ToolShell.register().
 

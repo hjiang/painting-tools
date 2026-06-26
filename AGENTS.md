@@ -4,7 +4,7 @@ Project-specific instructions for AI agents working on this codebase.
 
 ## Project Overview
 
-Painting Value Study — a single-page web app that converts photos to posterized
+Painting Tools — a single-page web app with multiple reference-photo prep tools
 images with a configurable number of value levels (2–12). Helps painters plan
 their value structure layer by layer.
 

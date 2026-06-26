@@ -1,8 +1,8 @@
-# 🎨 Painting Value Study
+# 🎨 Painting Tools
 
-A tool for painters: convert any photo into a posterized image with exactly
-**N value levels**. Dial the slider and see your reference photo the way you'd
-paint it — block-in with 2–3 values, refine with 5–7, finish with 9–12.
+A multi-tool reference photo prep app for painters — posterize to value levels,
+detect edges for sketching, overlay grids, lighten for printing, and mix colors
+with subtractive (Kubelka-Munk) blending.
 
 ## How It Works
 
