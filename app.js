@@ -261,8 +261,5 @@
     }
   });
 
-  dropZone.addEventListener('click', function () {
-    fileInput.click();
-  });
 
 })();
