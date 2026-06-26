@@ -24,6 +24,7 @@ jobs:
 
       - name: Run tests
         run: |
-          node tests/posterize.test.js
-          node tests/edgeDetect.test.js
-          node tests/gridOverlay.test.js
+          for t in tests/*.test.js; do
+            echo "== $t =="
+            node "$t" || exit 1
+          done

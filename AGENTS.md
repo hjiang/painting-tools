@@ -70,6 +70,16 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    0% = original image, 100% = pure white. Useful for printing faint
    reference images that use less ink and accept pencil/paint markup.
 
+8. **Color mixing is subtractive (Kubelka-Munk), not additive.** The photo is
+   transmitted light (additive RGB); paint is reflected light (subtractive).
+   So `mixPaints` does NOT average RGB — it linearizes each channel, converts
+   reflectance to `K/S = (1-R)²/(2R)`, mixes `K/S` by weight, then inverts
+   `R = 1 + K/S - sqrt((K/S)² + 2·K/S)`. Blue+yellow → green, all-pigments → mud.
+   `matchColor` searches 1–3-paint recipes on a percentage grid, scoring by
+   CIELAB ΔE and preferring simpler recipes; a large best-case ΔE flags a
+   “screen color” outside the paint gamut. The palette (name+hex per paint) is
+   saved to `localStorage` (`painting-tools.palette.v1`).
+
 ## File Structure
 
 ```
@@ -82,10 +92,12 @@ painting-tools/
 ├── edgeDetect.js       # detectEdges(imageData, {threshold, invert}) → ImageData
 ├── lighten.js          # lighten(imageData, amount) → { imageData }
 ├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
+├── colorMix.js         # averageColor, mixPaints (KM), rgbToLab, deltaE, matchColor
 ├── posterizeTool.js    # Tool module: posterization UI
 ├── sketchTool.js       # Tool module: edge detection / sketch UI
 ├── gridTool.js         # Tool module: grid overlay UI
 ├── lightenTool.js      # Tool module: lighten UI
+├── colorTool.js        # Tool module: color mixer (sample + recipe + palette)
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
@@ -98,7 +110,8 @@ painting-tools/
     ├── posterize.test.js
     ├── edgeDetect.test.js
     ├── gridOverlay.test.js
-    └── lighten.test.js
+    ├── lighten.test.js
+    └── colorMix.test.js
 ```
 
 ## When Adding Features

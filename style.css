@@ -305,6 +305,214 @@ header h1 {
   background: #5e6ee0;
 }
 
+/* ── Color Mixer Tool ──────────────────────── */
+.color-pick-box {
+  text-align: center;
+}
+
+.pick-stage {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.pick-stage #color-canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.pick-stage #color-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: transparent;
+}
+
+.mix-result {
+  margin-top: 1.25rem;
+}
+
+.mix-hint {
+  color: #888;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.swatch-pair {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  flex: 1;
+  min-width: 8rem;
+  max-width: 16rem;
+  text-align: center;
+}
+
+.swatch-chip {
+  height: 4.5rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.swatch-label {
+  font-size: 0.75rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.4rem;
+}
+
+.swatch-value {
+  font-size: 0.85rem;
+  color: #ccc;
+  font-family: monospace;
+}
+
+.match-quality {
+  text-align: center;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.match-quality.reachable { color: #7bd88f; }
+.match-quality.unreachable { color: #e6a23c; }
+
+.recipe-list {
+  margin: 1rem auto 0;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.recipe-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.recipe-swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 3px;
+  border: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.recipe-name { flex: 1; color: #ddd; font-size: 0.9rem; }
+.recipe-percent { color: #f0f0f0; font-weight: 600; font-size: 0.95rem; }
+
+.recipe-bar {
+  flex: 1.4;
+  height: 6px;
+  background: #2a2a40;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.recipe-bar > span {
+  display: block;
+  height: 100%;
+  background: #7c8aff;
+}
+
+.mix-note {
+  margin: 1.25rem auto 0;
+  max-width: 38rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #888;
+  border-left: 3px solid #3a3a55;
+  padding: 0.5rem 0.9rem;
+}
+.mix-note strong { color: #aaa; }
+
+.palette-editor {
+  margin-top: 1.5rem;
+  border-top: 1px solid #2a2a40;
+  padding-top: 0.75rem;
+}
+
+.palette-editor summary {
+  cursor: pointer;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+#color-radius-label {
+  display: inline-block;
+  min-width: 3.4em;
+  text-align: left;
+}
+
+.palette-list {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.4rem 0.6rem;
+}
+
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.palette-item input[type="color"] {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.palette-item input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  background: #16162a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #e0e0e0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.palette-remove {
+  background: none;
+  border: 1px solid #3a3a55;
+  color: #999;
+  border-radius: 6px;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.palette-remove:hover { color: #e06c75; border-color: #e06c75; }
+
+.palette-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.secondary-btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  border: 1px solid #3a3a55;
+  border-radius: 6px;
+  background: #1f1f38;
+  color: #ccc;
+  cursor: pointer;
+}
+.secondary-btn:hover { background: #2a2a48; }
+
 /* ── Responsive: Mobile ────────────────────── */
 @media (max-width: 700px) {
   .canvas-pair {

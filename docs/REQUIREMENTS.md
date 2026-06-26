@@ -72,6 +72,21 @@ or paint.
 For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 
+### F9: Color Mixer / Paint Recipe
+Sample a color from the photo and show how to mix it from a paint palette.
+- Click the image to sample the **average color** of pixels inside a small
+  circle (configurable radius).
+- Mix paints **subtractively** (Kubelka-Munk), not by averaging RGB, because
+  the photo is transmitted light (additive) while paint is reflected light
+  (subtractive). Blue + yellow paint makes green; RGB-averaging makes gray.
+- Output a recipe: which pigments and what percentages best approximate the
+  sampled color, plus a predicted swatch and a CIELAB ΔE closeness score.
+- Report when a sampled color is a **screen color** outside the paint gamut
+  (large ΔE — brighter / more saturated than pigment can reach).
+- The palette is **configurable** (name + color per paint) and persisted to
+  `localStorage`. Default palette: Cadmium Scarlet, Phthalo Blue, Burnt Umber,
+  Yellow Ochre, Flake White, Ultramarine Blue, Lemon Yellow, Alizarin Crimson.
+
 ## Non-Functional Requirements
 
 - **Works offline** — all processing happens client-side (no upload to a server)
@@ -84,5 +99,4 @@ Useful for tracing or studying individual value masses.
 - Line thinning / skeletonization
 - Adaptive thresholding (Otsu)
 - Batch processing
-- Palette suggestions or color matching
 - Composition guides (golden ratio, rule of thirds) — separate tool idea

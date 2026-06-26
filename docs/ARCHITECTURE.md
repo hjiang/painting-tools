@@ -103,6 +103,34 @@ for each pixel:
 - Preserves color relationships while reducing ink density
 - Useful for printing faint reference images to mark up
 
+### Algorithm: Subtractive Paint Mixing (Color Mixer)
+
+A screen emits **additive** light (RGB), so averaging two screen colors
+simulates mixing light. Paint is **subtractive** — pigments absorb wavelengths,
+so mixing must happen in reflectance space. We use the Kubelka-Munk
+single-constant model, per RGB channel, in linear light:
+
+```
+linearize each paint channel (sRGB → linear reflectance R)
+K/S      = (1 - R)^2 / (2R)          # reflectance → absorption/scatter ratio
+(K/S)mix = Σ wᵢ · (K/S)ᵢ              # mix by weight in K/S space
+Rmix     = 1 + (K/S) - sqrt((K/S)^2 + 2·(K/S))   # invert back to reflectance
+delinearize Rmix → sRGB
+```
+
+This makes blue + yellow → green (additive RGB averaging gives gray) and
+mixing many pigments → mud, never brighter than white — exactly like paint.
+
+**Recipe search.** `matchColor` searches recipes of 1–3 pigments on a
+percentage grid, scoring each candidate mix against the target by **CIELAB ΔE**
+(perceptual distance). Simpler recipes win ties (a larger recipe is only kept
+if it beats the best smaller one by a ΔE margin). A large best-case ΔE means
+the sampled color is a **screen color** outside the achievable paint gamut.
+
+**Palette persistence.** The palette (name + hex per paint) is stored in
+`localStorage` under `painting-tools.palette.v1`, falling back to the default
+eight-paint palette when absent or unparseable.
+
 ### File Structure
 
 ```
@@ -119,6 +147,8 @@ painting-tools/
 ├── sketchTool.js       # Tool module: edge detection UI wiring
 ├── gridTool.js         # Tool module: grid overlay UI wiring
 ├── lightenTool.js      # Tool module: lighten UI wiring
+├── colorMix.js         # Pure: KM subtractive mixing, CIELAB ΔE, recipe solver
+├── colorTool.js        # Tool module: color sampling + recipe + palette editor
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
@@ -131,7 +161,8 @@ painting-tools/
     ├── edgeDetect.test.js
     ├── histogram.test.js
     ├── gridOverlay.test.js
-    └── lighten.test.js
+    ├── lighten.test.js
+    └── colorMix.test.js
 ```
 
 ### Key Modules
@@ -143,11 +174,13 @@ painting-tools/
 | `gridOverlay.js` | `computeGridLayout(w, h, opts) → {...}`, `drawGrid(ctx, w, h, opts)` | Pure functions. Computes cell dimensions and centering offsets; draws grid lines, labels, diagonals, and margin dimming via Canvas 2D compositing. |
 | `edgeDetect.js` | `detectEdges(imageData, {threshold, invert}) → ImageData` | Pure function. Applies Sobel operator (3×3) for edge detection. Returns sketch-style `ImageData` (dark lines on light background). |
 | `lighten.js` | `lighten(imageData, amount) → { imageData }` | Pure function. Blends each pixel toward white by a percentage (0–100%). 0% = no change, 100% = pure white. Alpha preserved. |
+| `colorMix.js` | `averageColor`, `mixPaints` (Kubelka-Munk), `rgbToLab`, `deltaE`, `matchColor`, `DEFAULT_PALETTE` | Pure functions. Subtractive paint mixing in reflectance space + CIELAB ΔE recipe matching against a configurable palette. |
 | `histogram.js` | `drawHistogram(canvas, bins, N)` | Renders histogram bars on a given canvas. Each bar height = pixel count in that value band. |
 | `posterizeTool.js` | Tool module: registers posterization UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires slider, mode radios, histogram, and download. |
 | `gridTool.js` | Tool module: registers grid overlay UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires rows/cols sliders (with square-cell auto-sync), line color, width, style, labels, diagonals, square cells toggle, and download. |
 | `sketchTool.js` | Tool module: registers sketch UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires threshold slider, invert checkbox, and download. |
 | `lightenTool.js` | Tool module: registers lighten UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires amount slider (0–100%), side-by-side canvases, and download. |
+| `colorTool.js` | Tool module: registers Color Mixer UI with `ToolShell` | Calls `ToolShell.register({...})`. Click-to-sample circle (image + overlay canvas), sample-size slider, recipe/swatch display, and a localStorage-backed palette editor. |
 | `index.html` | Shell structure | File input, empty tab bar (populated by ToolShell), tool view containers. Each tool's DOM lives in its `.tool-view` div. |
 | `style.css` | Responsive layout + tab bar | Tab bar styles, tool view layout, side-by-side on wide screens, stacked on narrow. |
 

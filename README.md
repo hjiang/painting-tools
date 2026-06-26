@@ -31,7 +31,9 @@ to control edge sensitivity, and toggle invert for white-on-dark.
 3. Adjust the **Values** slider (2–12)
 4. Toggle between **Grayscale** and **Color** mode
 5. Click **▶ Rough Sketch** for an edge-detected line drawing
-6. Click **Download PNG** (or **Download Sketch PNG**) to save at original resolution
+6. Use the **Color Mixer** tab to click-sample a color and get a paint recipe
+   (mixed subtractively, with a configurable palette saved in your browser)
+7. Click **Download PNG** (or **Download Sketch PNG**) to save at original resolution
 
 Works on desktop and mobile. No internet needed — everything runs in your
 browser.
@@ -41,9 +43,8 @@ browser.
 Zero dependencies. Zero build step. Edit the files and reload.
 
 ```bash
-# Run unit tests
-node tests/posterize.test.js
-node tests/edgeDetect.test.js
+# Run unit tests (all suites)
+for t in tests/*.test.js; do node "$t"; done
 ```
 
 ### File Map
@@ -55,6 +56,7 @@ node tests/edgeDetect.test.js
 | `app.js` | Wiring: file load → posterize → display → download |
 | `posterize.js` | Core algorithm: grayscale & color posterization |
 | `edgeDetect.js` | Sobel edge detection → rough line sketch |
+| `colorMix.js` | Subtractive (Kubelka-Munk) paint mixing + recipe matching |
 | `histogram.js` | Value-distribution bar chart |
 | `tests/posterize.test.js` | 40 unit tests |
 | `tests/edgeDetect.test.js` | 153 unit tests |

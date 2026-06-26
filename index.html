@@ -213,6 +213,49 @@
           <button id="download-sketch-btn" class="download-btn">⬇ Download Sketch PNG</button>
         </div>
       </div>
+
+      <!-- ── Color Mixer Tool View ────────────────── -->
+      <div class="tool-view hidden" id="tool-color">
+        <div class="canvas-box color-pick-box">
+          <h3>Click to Sample a Color</h3>
+          <div class="pick-stage" id="color-stage">
+            <canvas id="color-canvas"></canvas>
+            <canvas id="color-overlay"></canvas>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="control-row">
+            <label for="color-radius" class="control-label">
+              Sample size: <strong id="color-radius-label">12 px</strong>
+            </label>
+            <input type="range" id="color-radius" min="1" max="40" value="12" step="1">
+          </div>
+        </div>
+
+        <div class="mix-result" id="color-result">
+          <p class="mix-hint">Click anywhere on the image to pick a color.</p>
+        </div>
+
+        <p class="mix-note">
+          <strong>Screen vs. paint.</strong> The image shows <em>transmitted</em>
+          light (additive RGB) — your screen can display colors more luminous and
+          saturated than any pigment can reach. The recipe below mixes paint
+          <em>subtractively</em> (Kubelka-Munk), the way reflected light really
+          behaves, and reports how close the mix can get. A large ΔE means the
+          sampled color is a “screen color” outside the paint gamut.
+        </p>
+
+        <!-- ── Palette editor ─────────────────────── -->
+        <details class="palette-editor" id="palette-editor">
+          <summary>Palette (saved to this browser)</summary>
+          <div class="palette-list" id="palette-list"></div>
+          <div class="palette-actions">
+            <button id="palette-add-btn" class="secondary-btn">+ Add paint</button>
+            <button id="palette-reset-btn" class="secondary-btn">Reset to default</button>
+          </div>
+        </details>
+      </div>
     </section>
   </main>
 
@@ -225,6 +268,8 @@
   <script src="posterizeTool.js"></script>
   <script src="sketchTool.js"></script>
   <script src="gridTool.js"></script>
+  <script src="colorMix.js"></script>
+  <script src="colorTool.js"></script>
   <script src="lightenTool.js"></script>
 </body>
 </html>
