@@ -65,6 +65,11 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    top. Square-cells mode auto-computes the companion dimension from the
    image aspect ratio and dims margins outside the grid area.
 
+7. **Image lightening** blends every pixel toward white by a configurable
+   percentage: `ch' = ch + (255 - ch) * (amount / 100)`. Alpha is preserved.
+   0% = original image, 100% = pure white. Useful for printing faint
+   reference images that use less ink and accept pencil/paint markup.
+
 ## File Structure
 
 ```
@@ -75,18 +80,25 @@ painting-tools/
 ├── posterize.js        # posterize(imageData, N, mode) → { imageData, histogram }
 ├── histogram.js        # drawHistogram(canvas, bins, N)
 ├── edgeDetect.js       # detectEdges(imageData, {threshold, invert}) → ImageData
+├── lighten.js          # lighten(imageData, amount) → { imageData }
 ├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
 ├── posterizeTool.js    # Tool module: posterization UI
 ├── sketchTool.js       # Tool module: edge detection / sketch UI
 ├── gridTool.js         # Tool module: grid overlay UI
+├── lightenTool.js      # Tool module: lighten UI
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
 │   └── plans/
+│       ├── 001-initial-mvp.md
+│       ├── 002-edge-detection-sketch.md
+│       ├── 003-tool-registry.md
+│       └── 004-grid-overlay.md
 └── tests/
     ├── posterize.test.js
     ├── edgeDetect.test.js
-    └── gridOverlay.test.js
+    ├── gridOverlay.test.js
+    └── lighten.test.js
 ```
 
 ## When Adding Features
