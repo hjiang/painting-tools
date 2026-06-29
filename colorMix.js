@@ -18,16 +18,19 @@
 //          rgbToLab, deltaE, matchColor.
 
 var DEFAULT_PALETTE = [
-  { name: 'Cadmium Scarlet', hex: '#e2452f' },
-  { name: 'Phthalo Blue',    hex: '#14346e' },
-  { name: 'Burnt Umber',     hex: '#5f3d26' },
-  { name: 'Yellow Ochre',    hex: '#c8963c' },
-  { name: 'Flake White',     hex: '#f5f4ea' },
-  { name: 'Titanium White',  hex: '#fbfbf6', strength: 1 },
-  { name: 'Ivory Black',     hex: '#1b1b1b', strength: 1 },
-  { name: 'Ultramarine Blue',hex: '#34378a' },
-  { name: 'Lemon Yellow',    hex: '#f0e64a' },
-  { name: 'Alizarin Crimson',hex: '#8a1f37' }
+  // Tinting strengths approximate Winsor & Newton Artists' Oil Colour.
+  // Phthalo Blue is ~5× stronger than Flake White (the baseline at 1.0);
+  // Yellow Ochre, a natural earth, is ~0.5× (weakest in the set).
+  { name: 'Cadmium Scarlet', hex: '#e2452f', strength: 2.0 },
+  { name: 'Phthalo Blue',    hex: '#14346e', strength: 5.0 },
+  { name: 'Burnt Umber',     hex: '#5f3d26', strength: 0.8 },
+  { name: 'Yellow Ochre',    hex: '#c8963c', strength: 0.5 },
+  { name: 'Flake White',     hex: '#f5f4ea', strength: 1.0 },
+  { name: 'Titanium White',  hex: '#fbfbf6', strength: 3.0 },
+  { name: 'Ivory Black',     hex: '#1b1b1b', strength: 1.5 },
+  { name: 'Ultramarine Blue',hex: '#34378a', strength: 1.5 },
+  { name: 'Lemon Yellow',    hex: '#f0e64a', strength: 2.0 },
+  { name: 'Alizarin Crimson',hex: '#8a1f37', strength: 1.8 }
 ];
 
 // ── Color conversions ─────────────────────────────────────

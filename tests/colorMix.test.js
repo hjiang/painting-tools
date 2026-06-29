@@ -208,9 +208,9 @@ console.log('--- matchColor: boundary conditions ---');
   // Custom chromaTolerance and valueHintThreshold options work.
   var paletteB = cm.DEFAULT_PALETTE;
   var ochre = cm.hexToRgb('#c8963c');
-  var slightlyLight = { r: Math.min(255, ochre.r + 30), g: Math.min(255, ochre.g + 30), b: Math.min(255, ochre.b + 30) };
-  var rb = cm.matchColor(slightlyLight, paletteB, { step: 5, chromaTolerance: 4, valueHintThreshold: 1 });
-  assertEq(rb.chromaReachable, rb.dC <= 4, 'chromaReachable matches custom chromaTolerance (dC=' + rb.dC.toFixed(1) + ')');
+  var slightlyLight = { r: Math.min(255, ochre.r + 60), g: Math.min(255, ochre.g + 60), b: Math.min(255, ochre.b + 60) };
+  var rb = cm.matchColor(slightlyLight, paletteB, { step: 5, chromaTolerance: 12, valueHintThreshold: 1 });
+  assertEq(rb.chromaReachable, rb.dC <= 12, 'chromaReachable matches custom chromaTolerance (dC=' + rb.dC.toFixed(1) + ')');
   assert(rb.valueHint != null, 'lower valueHintThreshold triggers hint sooner (threshold=1, dL=' + rb.dL.toFixed(1) + ', hint=' + rb.valueHint + ')');
 }
 {
