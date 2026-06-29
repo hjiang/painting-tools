@@ -165,5 +165,117 @@ console.log('--- matchColor ---');
 }
 
 // ============================================================
+console.log('--- matchColor: value/chroma decomposition ---');
+{
+  var palette3 = cm.DEFAULT_PALETTE;
+  // Target: yellow ochre hue but lighter (raise L).
+  var yocher = cm.hexToRgb('#c8963c'); // L ≈ 59
+  var lighter = { r: Math.min(255, yocher.r + 60), g: Math.min(255, yocher.g + 60), b: Math.min(255, yocher.b + 60) };
+  var recipe3 = cm.matchColor(lighter, palette3, { step: 5 });
+  assert(recipe3.chromaReachable, 'lighter version of palette paint is chroma-reachable');
+  assert(recipe3.dL > 0, 'dL > 0 when target is lighter than mixable result (dL=' + recipe3.dL.toFixed(1) + ')');
+  assertEq(recipe3.valueHint, 'lighten', 'valueHint is lighten when target is too light');
+}
+{
+  var palette4 = cm.DEFAULT_PALETTE;
+  // Target: definitively too dark for any paint — near-black with warm cast.
+  var darker = { r: 15, g: 8, b: 5 };  // very dark, warmer than pure black
+  var recipe4 = cm.matchColor(darker, palette4, { step: 5 });
+  assert(recipe4.chromaReachable, 'near-black target is chroma-reachable');
+  assert(recipe4.dL < 0, 'dL < 0 when target is darker than mixable result (dL=' + recipe4.dL.toFixed(1) + ')');
+  assertEq(recipe4.valueHint, 'darken', 'valueHint is darken when target is too dark');
+}
+{
+  // neon green is a real hue/saturation miss, not just a value issue
+  var neon = { r: 0, g: 255, b: 0 };
+  var recipe5 = cm.matchColor(neon, cm.DEFAULT_PALETTE, { step: 10 });
+  assert(!recipe5.chromaReachable, 'neon green is chroma-unreachable (dC=' + recipe5.dC.toFixed(1) + ')');
+  assertEq(recipe5.valueHint, null, 'valueHint is null when chroma dominates the miss');
+}
+{
+  // exact palette match should have dL ≈ 0, dC ≈ 0
+  var target6 = cm.hexToRgb('#e2452f'); // Cadmium Scarlet exactly
+  var recipe6 = cm.matchColor(target6, cm.DEFAULT_PALETTE, { step: 10 });
+  assert(recipe6.chromaReachable, 'exact palette match is chroma-reachable');
+  assert(Math.abs(recipe6.dL) < 2, 'exact palette match has near-zero dL (dL=' + recipe6.dL.toFixed(1) + ')');
+  assert(recipe6.dC < 2, 'exact palette match has near-zero dC (dC=' + recipe6.dC.toFixed(1) + ')');
+  assertEq(recipe6.valueHint, null, 'valueHint is null for exact palette match');
+}
+
+// ============================================================
+console.log('--- matchColor: boundary conditions ---');
+{
+  // Custom chromaTolerance and valueHintThreshold options work.
+  var paletteB = cm.DEFAULT_PALETTE;
+  var ochre = cm.hexToRgb('#c8963c');
+  var slightlyLight = { r: Math.min(255, ochre.r + 30), g: Math.min(255, ochre.g + 30), b: Math.min(255, ochre.b + 30) };
+  var rb = cm.matchColor(slightlyLight, paletteB, { step: 5, chromaTolerance: 4, valueHintThreshold: 1 });
+  assertEq(rb.chromaReachable, rb.dC <= 4, 'chromaReachable matches custom chromaTolerance (dC=' + rb.dC.toFixed(1) + ')');
+  assert(rb.valueHint != null, 'lower valueHintThreshold triggers hint sooner (threshold=1, dL=' + rb.dL.toFixed(1) + ', hint=' + rb.valueHint + ')');
+}
+{
+  // With a huge chroma tolerance, even neon green is "reachable".
+  var targetC = { r: 0, g: 255, b: 0 };
+  var rc = cm.matchColor(targetC, cm.DEFAULT_PALETTE, { step: 10, chromaTolerance: 100 });
+  assert(rc.chromaReachable, 'huge chromaTolerance makes everything reachable');
+  assert(rc.dC <= 100, 'dC is finite');
+}
+{
+  // dC exactly at 6 (default boundary): dC <= 6 is reachable.
+  // We verify the boolean is <= (inclusive) by using tolerance=6 on a target
+  // that produces dC exactly at 6 — hard to force exactly, so test the invariant.
+  var targetD = cm.hexToRgb('#c8963c'); // exact palette match: dC ≈ 0
+  var rd = cm.matchColor(targetD, cm.DEFAULT_PALETTE, { step: 10, chromaTolerance: 0.1 });
+  assert(rd.chromaReachable, 'exact match reachable even with tiny tolerance (dC=' + rd.dC.toFixed(3) + ')');
+}
+{
+  // valueHint is null when dL is within threshold (between -2 and +2).
+  var targetE = cm.hexToRgb('#c8963c');
+  var re = cm.matchColor(targetE, cm.DEFAULT_PALETTE, { step: 10, valueHintThreshold: 100 });
+  // Exact match: dL ≈ 0, valueHintThreshold=100 means dL must exceed 100 to trigger.
+  // So valueHint should be null because 0 < 100.
+  assertEq(re.valueHint, null, 'valueHint null when dL within large threshold (dL=' + re.dL.toFixed(1) + ')');
+}
+
+// ============================================================
+console.log('--- mixPaints: tinting strength ---');
+{
+  // With equal strength (default), 50/50 is identity in KM space for the same paint
+  var p7 = { r: 130, g: 90, b: 40 };
+  var mix = cm.mixPaints([p7, p7], [1, 1], [1, 1]);
+  assertClose(mix.r, 130, 'equal-strength self-mix preserves R', 2);
+}
+{
+  // With phthalo@30 + white@1, even a little phthalo dominates
+  var phthalo = cm.hexToRgb('#14346e');   // deep blue
+  var titWhite = cm.hexToRgb('#fbfbf6');  // bright white
+  var weakMix = cm.mixPaints([phthalo, titWhite], [10, 90], [1, 1]);
+  var strongMix = cm.mixPaints([phthalo, titWhite], [10, 90], [30, 1]);
+  assert(strongMix.r < weakMix.r, 'higher phthalo strength makes mix darker (r=' + strongMix.r + ' vs ' + weakMix.r + ')');
+  var Ls = cm.rgbToLab(strongMix).L;
+  var Lw = cm.rgbToLab(weakMix).L;
+  assert(Ls < Lw, 'high-strength phthalo suppresses lightness (L=' + Ls.toFixed(1) + ' vs ' + Lw.toFixed(1) + ')');
+}
+{
+  // strengths array is optional: call without strengths still works
+  var p9 = { r: 200, g: 100, b: 80 };
+  var mix9 = cm.mixPaints([p9, p9], [1, 1]);
+  assertClose(mix9.r, 200, 'mixPaints without strengths arg preserves R', 2);
+}
+
+// ============================================================
+console.log('--- matchColor: black + dark targets (Stage 3) ---');
+{
+  var pal10 = cm.DEFAULT_PALETTE;
+  assert(pal10.some(function (p) { return p.name === 'Ivory Black'; }), 'default palette includes Ivory Black');
+  // A dark brown target should now match closely with black available.
+  var darkBrown = { r: 35, g: 22, b: 15 };  // very dark, warm
+  var recipe10 = cm.matchColor(darkBrown, pal10, { step: 5 });
+  assert(recipe10.entries.some(function (e) { return e.hex === '#1b1b1b'; }),
+    'dark brown recipe includes Ivory Black');
+  assert(recipe10.chromaReachable, 'dark brown is chroma-reachable with black available');
+}
+
+// ============================================================
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed > 0 ? 1 : 0);

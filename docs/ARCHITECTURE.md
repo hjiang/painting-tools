@@ -163,12 +163,19 @@ mixing many pigments → mud, never brighter than white — exactly like paint.
 **Recipe search.** `matchColor` searches recipes of 1–3 pigments on a
 percentage grid, scoring each candidate mix against the target by **CIELAB ΔE**
 (perceptual distance). Simpler recipes win ties (a larger recipe is only kept
-if it beats the best smaller one by a ΔE margin). A large best-case ΔE means
-the sampled color is a **screen color** outside the achievable paint gamut.
+if it beats the best smaller one by a ΔE margin). The result is decomposed
+into **chroma distance (ΔC)** and **signed lightness difference (ΔL)**. When
+chroma is within tolerance, the hue is reachable with paint — a `valueHint`
+(`'lighten'` / `'darken'`) signals whether the target needs value adjustment
+(add white or black). Only genuine hue/saturation misses are flagged as
+"out of gamut." Each pigment has an optional `strength` multiplier for
+tinting power; `mixPaints` weights K/S contributions by `weight × strength`.
 
-**Palette persistence.** The palette (name + hex per paint) is stored in
-`localStorage` under `painting-tools.palette.v1`, falling back to the default
-eight-paint palette when absent or unparseable.
+**Palette persistence.** The palette (name + hex + optional strength per
+paint) is stored in `localStorage` under `painting-tools.palette.v2`.
+A v1 → v2 migration adds the strength field when old v1 data is present.
+The default palette has 10 paints including Titanium White and Ivory Black
+for value adjustment.
 
 ### File Structure
 

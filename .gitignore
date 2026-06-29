@@ -8,3 +8,6 @@
 
 # No build artifacts — this is a zero-build project.
 # If a build step is added later, ignore the output directory here.
+
+# Subagent scratch output
+worker-output.json

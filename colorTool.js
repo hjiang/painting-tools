@@ -9,7 +9,7 @@ ToolShell.register({
   icon: '\uD83C\uDFA8',  // 🎨
 
   mount: function (container) {
-    var PALETTE_STORAGE_KEY = 'painting-tools.palette.v1';
+    var PALETTE_STORAGE_KEY = 'painting-tools.palette.v2';
     var RADIUS_STORAGE_KEY = 'painting-tools.color.radius';
 
     var mainCanvas = document.getElementById('color-canvas');
@@ -37,8 +37,23 @@ ToolShell.register({
           var parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length) return parsed;
         }
+        // Migrate v1 palette: add missing strength field.
+        var v1Raw = localStorage.getItem('painting-tools.palette.v1');
+        if (v1Raw) {
+          var v1 = JSON.parse(v1Raw);
+          if (Array.isArray(v1) && v1.length) {
+            for (var vi = 0; vi < v1.length; vi++) {
+              if (v1[vi].strength == null) v1[vi].strength = 1;
+            }
+            // Persist to v2 before dropping v1 so the migration survives a
+            // reload even if the user never edits the palette.
+            localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(v1));
+            localStorage.removeItem('painting-tools.palette.v1');
+            return v1;
+          }
+        }
       } catch (e) { /* ignore — fall back to default */ }
-      return DEFAULT_PALETTE.map(function (p) { return { name: p.name, hex: p.hex }; });
+      return DEFAULT_PALETTE.map(function (p) { return { name: p.name, hex: p.hex, strength: p.strength != null ? p.strength : 1 }; });
     }
 
     function savePalette() {
@@ -131,13 +146,37 @@ ToolShell.register({
           '</div>';
       }).join('');
 
-      var quality = recipe.reachable
-        ? '<div class="match-quality reachable">Close match \u2014 \u0394E ' +
-            recipe.deltaE.toFixed(1) + ' (within paint gamut)</div>'
-        : '<div class="match-quality unreachable">Best possible \u0394E ' +
-            recipe.deltaE.toFixed(1) +
-            ' \u2014 this is a screen color brighter or more saturated than these ' +
-            'paints can reach. The swatch shows the closest mixable paint.</div>';
+      var absDL = Math.abs(recipe.dL);
+      var isValueMiss = recipe.valueHint !== null;
+      var isHueMiss = !recipe.chromaReachable;
+
+      var quality;
+      if (!isHueMiss && !isValueMiss) {
+        // Close match: chroma and value are both close.
+        quality = '<div class="match-quality reachable">Close match \u2014 \u0394E ' +
+          recipe.deltaE.toFixed(1) + ' (within paint gamut)</div>';
+      } else if (!isHueMiss && isValueMiss) {
+        // Hue reachable, adjust value.
+        var dir = recipe.valueHint === 'lighten' ? 'lighten (add white)' : 'darken (add black)';
+        var pctHint = Math.round(absDL);
+        quality = '<div class="match-quality value-adjust">' +
+          'Mix this hue, then <strong>' + dir + '</strong> to adjust value by ~' + pctHint + ' L* units.' +
+          ' <span class="delta-note">' +
+          '(\u0394E ' + recipe.deltaE.toFixed(1) + ', \u0394L ' +
+          (recipe.dL > 0 ? '+' : '') + recipe.dL.toFixed(1) + ', ' +
+          '\u0394C ' + recipe.dC.toFixed(1) + ')' +
+          '</span></div>';
+      } else {
+        // Out of gamut: chroma/hue beyond the pigments.
+        quality = '<div class="match-quality unreachable">' +
+          'Best possible \u0394E ' + recipe.deltaE.toFixed(1) +
+          ' \u2014 this hue is beyond these paints\u2019 gamut.' +
+          ' The swatch shows the closest mixable color.' +
+          ' <span class="delta-note">' +
+          '(\u0394C ' + recipe.dC.toFixed(1) + ', ' +
+          '\u0394L ' + (recipe.dL > 0 ? '+' : '') + recipe.dL.toFixed(1) + ')' +
+          '</span></div>';
+      }
 
       resultEl.innerHTML =
         '<div class="swatch-pair">' +
@@ -187,6 +226,19 @@ ToolShell.register({
           savePalette();
         });
 
+        var strength = document.createElement('input');
+        strength.type = 'number';
+        strength.className = 'palette-strength';
+        strength.value = paint.strength != null ? paint.strength : 1;
+        strength.min = '0.1';
+        strength.step = '0.5';
+        strength.title = 'Tinting strength (higher = more dominant)';
+        strength.addEventListener('input', function () {
+          palette[i].strength = parseFloat(strength.value) || 1;
+          savePalette();
+          runMatch();
+        });
+
         var remove = document.createElement('button');
         remove.className = 'palette-remove';
         remove.textContent = '\u00d7';
@@ -201,6 +253,7 @@ ToolShell.register({
 
         row.appendChild(color);
         row.appendChild(name);
+        row.appendChild(strength);
         row.appendChild(remove);
         listEl.appendChild(row);
       });
@@ -239,13 +292,13 @@ ToolShell.register({
     });
 
     addBtn.addEventListener('click', function () {
-      palette.push({ name: 'New Paint', hex: '#808080' });
+      palette.push({ name: 'New Paint', hex: '#808080', strength: 1 });
       savePalette();
       renderPalette();
     });
 
     resetBtn.addEventListener('click', function () {
-      palette = DEFAULT_PALETTE.map(function (p) { return { name: p.name, hex: p.hex }; });
+      palette = DEFAULT_PALETTE.map(function (p) { return { name: p.name, hex: p.hex, strength: p.strength != null ? p.strength : 1 }; });
       savePalette();
       renderPalette();
       runMatch();

@@ -23,6 +23,8 @@ var DEFAULT_PALETTE = [
   { name: 'Burnt Umber',     hex: '#5f3d26' },
   { name: 'Yellow Ochre',    hex: '#c8963c' },
   { name: 'Flake White',     hex: '#f5f4ea' },
+  { name: 'Titanium White',  hex: '#fbfbf6', strength: 1 },
+  { name: 'Ivory Black',     hex: '#1b1b1b', strength: 1 },
   { name: 'Ultramarine Blue',hex: '#34378a' },
   { name: 'Lemon Yellow',    hex: '#f0e64a' },
   { name: 'Alizarin Crimson',hex: '#8a1f37' }
@@ -125,11 +127,20 @@ function rFromKs(ks) {
  *
  * @param {Array<{r:number,g:number,b:number}>} paints
  * @param {number[]} weights - relative amounts; normalized internally.
+ * @param {number[]} [strengths] - optional per-pigment tinting strength
+ *   multipliers (default 1.0 each). Effective weight = weight × strength.
  * @returns {{r:number,g:number,b:number}}
  */
-function mixPaints(paints, weights) {
+function mixPaints(paints, weights, strengths) {
+  // Apply strength multipliers to compute effective weights.
+  var n = weights.length;
+  var effective = [];
+  for (var i = 0; i < n; i++) {
+    var s = strengths ? (strengths[i] != null ? strengths[i] : 1) : 1;
+    effective[i] = weights[i] * s;
+  }
   var total = 0;
-  for (var w = 0; w < weights.length; w++) total += weights[w];
+  for (var w2 = 0; w2 < effective.length; w2++) total += effective[w2];
   if (total <= 0) return { r: 0, g: 0, b: 0 };
 
   var channels = ['r', 'g', 'b'];
@@ -139,7 +150,7 @@ function mixPaints(paints, weights) {
     var ksMix = 0;
     for (var p = 0; p < paints.length; p++) {
       var lin = srgbToLinear(paints[p][ch] / 255);
-      ksMix += (weights[p] / total) * ksFromR(lin);
+      ksMix += (effective[p] / total) * ksFromR(lin);
     }
     var Rmix = rFromKs(ksMix);
     out[ch] = Math.round(linearToSrgb(Rmix) * 255);
@@ -221,21 +232,25 @@ function compositions(units, k) {
  * chosen if it beats the best smaller one by more than `improveBy` ΔE.
  *
  * @param {{r:number,g:number,b:number}} target - sampled (screen) color
- * @param {Array<{name:string,hex:string}>} palette
+ * @param {Array<{name:string,hex:string,strength?:number}>} palette
  * @param {{maxPaints?:number, step?:number, improveBy?:number,
- *          reachableDeltaE?:number}} [opts]
+ *          chromaTolerance?:number, valueHintThreshold?:number}} [opts]
  * @returns {{entries:Array<{name:string,hex:string,percent:number}>,
  *            mixed:{r:number,g:number,b:number}, hex:string,
- *            deltaE:number, reachable:boolean}}
+ *            deltaE:number, reachable:boolean,
+ *            dL:number, dC:number, valueHint:string|null,
+ *            chromaReachable:boolean}}
  */
 function matchColor(target, palette, opts) {
   opts = opts || {};
   var maxPaints = opts.maxPaints || 3;
   var step = opts.step || 2;
   var improveBy = opts.improveBy != null ? opts.improveBy : 1.0;
-  var reachableDeltaE = opts.reachableDeltaE != null ? opts.reachableDeltaE : 8;
+  var chromaTolerance = opts.chromaTolerance != null ? opts.chromaTolerance : 6;
+  var valueHintThreshold = opts.valueHintThreshold != null ? opts.valueHintThreshold : 2;
 
   var rgbs = palette.map(function (p) { return hexToRgb(p.hex); });
+  var strengths = palette.map(function (p) { return p.strength != null ? p.strength : 1; });
   var targetLab = rgbToLab(target);
   var units = Math.round(100 / step);
 
@@ -250,9 +265,10 @@ function matchColor(target, palette, opts) {
     for (var ci = 0; ci < combos.length; ci++) {
       var idx = combos[ci];
       var paints = idx.map(function (i) { return rgbs[i]; });
+      var idxStrengths = idx.map(function (i) { return strengths[i]; });
       for (var pi = 0; pi < parts.length; pi++) {
         var weights = parts[pi];
-        var mixed = mixPaints(paints, weights);
+        var mixed = mixPaints(paints, weights, idxStrengths);
         var d = deltaE(rgbToLab(mixed), targetLab);
         if (!bestForSize || d < bestForSize.deltaE) {
           bestForSize = { idx: idx, weights: weights, mixed: mixed, deltaE: d };
@@ -273,12 +289,30 @@ function matchColor(target, palette, opts) {
     };
   }).sort(function (a, b) { return b.percent - a.percent; });
 
+  // ── Value/chroma decomposition ───────────────────────
+  var mixedLab = rgbToLab(best.mixed);
+  var dL = targetLab.L - mixedLab.L;   // positive → target lighter
+  var da = targetLab.a - mixedLab.a;
+  var db = targetLab.b - mixedLab.b;
+  var dC = Math.sqrt(da * da + db * db);
+
+  var chromaReachable = dC <= chromaTolerance;
+  var valueHint = null;
+  if (chromaReachable) {
+    if (dL > valueHintThreshold) valueHint = 'lighten';
+    else if (dL < -valueHintThreshold) valueHint = 'darken';
+  }
+
   return {
     entries: entries,
     mixed: best.mixed,
     hex: rgbToHex(best.mixed),
     deltaE: best.deltaE,
-    reachable: best.deltaE <= reachableDeltaE
+    reachable: chromaReachable,
+    dL: dL,
+    dC: dC,
+    valueHint: valueHint,
+    chromaReachable: chromaReachable
   };
 }
 

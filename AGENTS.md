@@ -84,9 +84,14 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    reflectance to `K/S = (1-R)²/(2R)`, mixes `K/S` by weight, then inverts
    `R = 1 + K/S - sqrt((K/S)² + 2·K/S)`. Blue+yellow → green, all-pigments → mud.
    `matchColor` searches 1–3-paint recipes on a percentage grid, scoring by
-   CIELAB ΔE and preferring simpler recipes; a large best-case ΔE flags a
-   “screen color” outside the paint gamut. The palette (name+hex per paint) is
-   saved to `localStorage` (`painting-tools.palette.v1`).
+   CIELAB ΔE and preferring simpler recipes. It decomposes the result into
+   chroma distance (ΔC) and signed lightness difference (ΔL), producing a
+   `valueHint` ('lighten'/'darken') when the hue is reachable but value needs
+   adjustment. Only genuine hue/saturation misses are flagged as "out of gamut."
+   Each pigment has an optional `strength` multiplier (default 1.0) for tinting
+   power; `mixPaints` weights K/S contributions by `weight × strength`.
+   The palette includes Ivory Black and Titanium White as value adjusters.
+   Saved to `localStorage` as `painting-tools.palette.v2` with v1 migration.
 
 ## File Structure
 

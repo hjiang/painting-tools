@@ -434,6 +434,12 @@ header h1 {
 
 .match-quality.reachable { color: #7bd88f; }
 .match-quality.unreachable { color: #e6a23c; }
+.match-quality.value-adjust { color: #5dade2; }
+
+.delta-note {
+  color: #666;
+  font-size: 0.8rem;
+}
 
 .recipe-list {
   margin: 1rem auto 0;
@@ -535,6 +541,21 @@ header h1 {
   color: #e0e0e0;
   padding: 0.4rem 0.6rem;
   font-size: 0.9rem;
+}
+
+.palette-strength {
+  width: 3.2rem;
+  background: #16162a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #e0e0e0;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.8rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.palette-strength::-webkit-inner-spin-button {
+  opacity: 0.6;
 }
 
 .palette-remove {
