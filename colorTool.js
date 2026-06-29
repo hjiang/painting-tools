@@ -22,6 +22,13 @@ ToolShell.register({
     var addBtn = document.getElementById('palette-add-btn');
     var resetBtn = document.getElementById('palette-reset-btn');
 
+    // Color picker elements
+    var pickerOverlay = document.getElementById('color-picker-overlay');
+    var pickerSearch = document.getElementById('color-picker-search');
+    var pickerList = document.getElementById('color-picker-list');
+    var pickerClose = document.getElementById('color-picker-close');
+    var pickerCustom = document.getElementById('color-picker-custom');
+
     var mainCtx = mainCanvas.getContext('2d');
     var overlayCtx = overlay.getContext('2d');
 
@@ -292,9 +299,64 @@ ToolShell.register({
     });
 
     addBtn.addEventListener('click', function () {
+      openColorPicker();
+    });
+
+    // ── Color picker ─────────────────────────────
+
+    function openColorPicker() {
+      pickerSearch.value = '';
+      renderPickerList(WN_COLORS);
+      pickerOverlay.hidden = false;
+      pickerSearch.focus();
+    }
+
+    function closeColorPicker() {
+      pickerOverlay.hidden = true;
+    }
+
+    function renderPickerList(colors) {
+      pickerList.innerHTML = '';
+      if (colors.length === 0) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'grid-column:1/-1;text-align:center;color:#666;padding:1rem;';
+        empty.textContent = 'No colors match your filter.';
+        pickerList.appendChild(empty);
+        return;
+      }
+      colors.forEach(function (c) {
+        var btn = document.createElement('button');
+        btn.className = 'color-picker-item';
+        btn.innerHTML = '<span class="picker-swatch" style="background:' + c.hex + '"></span>' + escapeHtml(c.name);
+        btn.addEventListener('click', function () {
+          palette.push({ name: c.name, hex: c.hex, strength: c.strength });
+          savePalette();
+          renderPalette();
+          closeColorPicker();
+        });
+        pickerList.appendChild(btn);
+      });
+    }
+
+    pickerSearch.addEventListener('input', function () {
+      var q = pickerSearch.value.toLowerCase().trim();
+      if (!q) { renderPickerList(WN_COLORS); return; }
+      var filtered = WN_COLORS.filter(function (c) {
+        return c.name.toLowerCase().indexOf(q) !== -1;
+      });
+      renderPickerList(filtered);
+    });
+
+    pickerClose.addEventListener('click', closeColorPicker);
+    pickerOverlay.addEventListener('click', function (e) {
+      if (e.target === pickerOverlay) closeColorPicker();
+    });
+
+    pickerCustom.addEventListener('click', function () {
       palette.push({ name: 'New Paint', hex: '#808080', strength: 1 });
       savePalette();
       renderPalette();
+      closeColorPicker();
     });
 
     resetBtn.addEventListener('click', function () {

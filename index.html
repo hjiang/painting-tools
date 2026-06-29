@@ -274,6 +274,22 @@
             <button id="palette-reset-btn" class="secondary-btn">Reset to default</button>
           </div>
         </details>
+
+        <!-- ── W&N color picker modal ──────────── -->
+        <div class="color-picker-overlay" id="color-picker-overlay" hidden>
+          <div class="color-picker-panel">
+            <div class="color-picker-header">
+              <h3>Add Paint from W&N Artists' Oil Colour</h3>
+              <button class="color-picker-close" id="color-picker-close">&times;</button>
+            </div>
+            <input type="text" class="color-picker-search" id="color-picker-search"
+                   placeholder="Filter colors…" autocomplete="off">
+            <div class="color-picker-list" id="color-picker-list"></div>
+            <div class="color-picker-footer">
+              <button id="color-picker-custom" class="secondary-btn">+ Custom color</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
