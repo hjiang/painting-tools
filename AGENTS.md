@@ -94,7 +94,8 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
 painting-tools/
 ├── index.html          # UI shell with tab bar and tool views
 ├── style.css           # Dark theme, responsive layout
-├── app.js              # ImageManager, ToolShell, canvas helpers (IIFE)
+├── app.js              # ImageManager, ToolShell, canvas/radio helpers (IIFE)
+├── settings.js         # Settings: typed, error-safe localStorage wrappers
 ├── posterize.js        # posterize(imageData, N, mode) → { imageData, histogram }
 ├── histogram.js        # drawHistogram(canvas, bins, N)
 ├── edgeDetect.js       # detectEdges(imageData, {threshold, invert}) → ImageData
@@ -120,7 +121,8 @@ painting-tools/
     ├── edgeDetect.test.js
     ├── gridOverlay.test.js
     ├── lighten.test.js
-    └── colorMix.test.js
+    ├── colorMix.test.js
+    └── settings.test.js
 ```
 
 ## When Adding Features

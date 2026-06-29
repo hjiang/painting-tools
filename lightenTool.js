@@ -34,12 +34,6 @@ ToolShell.register({
       drawImageDataToCanvas(_lastResult.imageData, resultCanvas);
     }
 
-    // Override the tool's process binding so the shell calls our render
-    ToolShell._tools['lighten'].process = function (imageData) {
-      drawImageDataToCanvas(imageData, originalCanvas);
-      render();
-    };
-
     amountSlider.addEventListener('input', render);
 
     // ── Promote button ─────────────────────────
@@ -55,9 +49,7 @@ ToolShell.register({
         downloadImageData(_lastResult.imageData, 'lightened.png');
       }
     });
-  },
 
-  process: function (imageData) {
-    // Overridden in mount()
+    return render;
   }
 });

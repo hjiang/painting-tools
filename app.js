@@ -219,10 +219,13 @@
       var viewEl = document.getElementById('tool-' + id);
       if (viewEl) viewEl.classList.remove('hidden');
 
-      // Mount (first time only)
+      // Mount (first time only). mount() returns the tool's process
+      // function — a closure over its DOM refs — which the shell calls
+      // on image load, tab switch, and resize.
       if (!next._mounted) {
         next._mounted = true;
-        next.mount(viewEl);
+        var processFn = next.mount(viewEl);
+        if (typeof processFn === 'function') next.process = processFn;
       }
 
       ToolShell._activeId = id;
@@ -304,12 +307,26 @@
     return btn;
   }
 
+  /**
+   * Read the value of the checked radio in a NodeList/HTMLCollection.
+   * @param {NodeListOf<HTMLInputElement>} radios
+   * @param {string} fallback - returned when none is checked
+   * @returns {string}
+   */
+  function getCheckedValue(radios, fallback) {
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) return radios[i].value;
+    }
+    return fallback;
+  }
+
   // Expose shell objects globally (used by tool modules)
   window.ImageManager = ImageManager;
   window.ToolShell = ToolShell;
   window.drawImageDataToCanvas = drawImageDataToCanvas;
   window.downloadImageData = downloadImageData;
   window.createPromoteButton = createPromoteButton;
+  window.getCheckedValue = getCheckedValue;
 
   // ═══════════════════════════════════════════════════════
   //  Initialize shell

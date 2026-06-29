@@ -32,31 +32,14 @@ ToolShell.register({
 
     // ── Settings persistence ─────────────────────
 
-    function loadCheckbox(key, fallback) {
-      try {
-        var saved = localStorage.getItem(key);
-        if (saved !== null) return saved === 'true';
-      } catch (e) { /* ignore */ }
-      return fallback;
-    }
-
-    function saveCheckbox(key, val) {
-      try {
-        localStorage.setItem(key, String(val));
-      } catch (e) { /* storage unavailable */ }
-    }
-
-    // Restore saved settings on mount
-    squareCellsCheck.checked = loadCheckbox(SQUARE_KEY, squareCellsCheck.checked);
-    autoComputeCheck.checked = loadCheckbox(AUTO_KEY, autoComputeCheck.checked);
+    // Restore saved settings on mount (falling back to the HTML defaults).
+    squareCellsCheck.checked = Settings.getBool(SQUARE_KEY, squareCellsCheck.checked);
+    autoComputeCheck.checked = Settings.getBool(AUTO_KEY, autoComputeCheck.checked);
 
     // ── Helpers ──────────────────────────────────────
 
     function getLineColor() {
-      for (var i = 0; i < lineColorRadios.length; i++) {
-        if (lineColorRadios[i].checked) return lineColorRadios[i].value;
-      }
-      return '#ffffff';
+      return getCheckedValue(lineColorRadios, '#ffffff');
     }
 
     function getOptions() {
@@ -156,12 +139,6 @@ ToolShell.register({
       drawGrid(octx, w, h, opts);
     }
 
-    // ── Override process for ToolShell ───────────────
-
-    ToolShell._tools['grid'].process = function (imageData) {
-      render();
-    };
-
     // ── Event listeners ──────────────────────────────
 
     rowsSlider.addEventListener('input', function () {
@@ -175,7 +152,7 @@ ToolShell.register({
     });
 
     squareCellsCheck.addEventListener('change', function () {
-      saveCheckbox(SQUARE_KEY, squareCellsCheck.checked);
+      Settings.set(SQUARE_KEY, squareCellsCheck.checked);
       if (squareCellsCheck.checked && autoComputeCheck.checked) {
         syncSquareSliders('columns');
       } else {
@@ -185,7 +162,7 @@ ToolShell.register({
     });
 
     autoComputeCheck.addEventListener('change', function () {
-      saveCheckbox(AUTO_KEY, autoComputeCheck.checked);
+      Settings.set(AUTO_KEY, autoComputeCheck.checked);
       if (autoComputeCheck.checked && squareCellsCheck.checked) {
         syncSquareSliders('columns');
       } else {
@@ -232,9 +209,7 @@ ToolShell.register({
         }, 'image/png');
       }
     });
-  },
 
-  process: function (imageData) {
-    // Overridden in mount()
+    return render;
   }
 });

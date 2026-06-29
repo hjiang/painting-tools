@@ -24,44 +24,10 @@ ToolShell.register({
 
     // ── Settings persistence ─────────────────────
 
-    function loadFloat(key, fallback) {
-      try {
-        var saved = localStorage.getItem(key);
-        if (saved !== null) {
-          var val = parseFloat(saved);
-          if (!isNaN(val)) return val;
-        }
-      } catch (e) { /* ignore */ }
-      return fallback;
-    }
-
-    function saveFloat(key, val) {
-      try {
-        localStorage.setItem(key, String(val));
-      } catch (e) { /* storage unavailable */ }
-    }
-
-    function loadThreshold() {
-      try {
-        var saved = localStorage.getItem(THRESHOLD_KEY);
-        if (saved !== null) {
-          var val = parseInt(saved, 10);
-          if (!isNaN(val)) return val;
-        }
-      } catch (e) { /* ignore */ }
-      return parseInt(edgeThreshold.value, 10);
-    }
-
-    function saveThreshold(val) {
-      try {
-        localStorage.setItem(THRESHOLD_KEY, String(val));
-      } catch (e) { /* storage unavailable */ }
-    }
-
-    // Restore saved settings on mount
-    edgeBlur.value = loadFloat(BLUR_KEY, parseFloat(edgeBlur.value));
+    // Restore saved settings on mount (falling back to the HTML defaults).
+    edgeBlur.value = Settings.getNumber(BLUR_KEY, parseFloat(edgeBlur.value));
     edgeBlurLabel.textContent = parseFloat(edgeBlur.value).toFixed(1);
-    edgeThreshold.value = loadThreshold();
+    edgeThreshold.value = Settings.getInt(THRESHOLD_KEY, parseInt(edgeThreshold.value, 10));
     edgeThresholdLabel.textContent = edgeThreshold.value;
 
     function renderSketch() {
@@ -81,19 +47,14 @@ ToolShell.register({
       drawImageDataToCanvas(_sketchImageData, sketchCanvas);
     }
 
-    // Override the tool's process binding
-    ToolShell._tools['sketch'].process = function (imageData) {
-      renderSketch();
-    };
-
     edgeBlur.addEventListener('input', function () {
       var val = parseFloat(edgeBlur.value);
       edgeBlurLabel.textContent = val.toFixed(1);
-      saveFloat(BLUR_KEY, val);
+      Settings.set(BLUR_KEY, val);
       renderSketch();
     });
     edgeThreshold.addEventListener('input', function () {
-      saveThreshold(parseInt(edgeThreshold.value, 10));
+      Settings.set(THRESHOLD_KEY, parseInt(edgeThreshold.value, 10));
       renderSketch();
     });
     edgeInvert.addEventListener('change', renderSketch);
@@ -115,9 +76,7 @@ ToolShell.register({
         downloadImageData(_sketchImageData, 'sketch.png');
       }
     });
-  },
 
-  process: function (imageData) {
-    // Overridden in mount()
+    return renderSketch;
   }
 });

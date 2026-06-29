@@ -51,23 +51,6 @@ ToolShell.register({
 
     // ── Sample size persistence ─────────────────────
 
-    function loadRadius() {
-      try {
-        var saved = localStorage.getItem(RADIUS_STORAGE_KEY);
-        if (saved !== null) {
-          var val = parseInt(saved, 10);
-          if (!isNaN(val)) return val;
-        }
-      } catch (e) { /* ignore */ }
-      return parseInt(radiusSlider.value, 10); // fall back to HTML default
-    }
-
-    function saveRadius(val) {
-      try {
-        localStorage.setItem(RADIUS_STORAGE_KEY, String(val));
-      } catch (e) { /* storage unavailable */ }
-    }
-
     function getRadiusPx() {
       return parseInt(radiusSlider.value, 10);
     }
@@ -251,7 +234,7 @@ ToolShell.register({
     radiusSlider.addEventListener('input', function () {
       var val = getRadiusPx();
       radiusLabel.textContent = val + ' px';
-      saveRadius(val);
+      Settings.set(RADIUS_STORAGE_KEY, val);
       runMatch();
     });
 
@@ -271,18 +254,15 @@ ToolShell.register({
     renderPalette();
 
     // Restore saved circle size.
-    radiusSlider.value = loadRadius();
-    radiusLabel.textContent = loadRadius() + ' px';
+    var savedRadius = Settings.getInt(RADIUS_STORAGE_KEY, parseInt(radiusSlider.value, 10));
+    radiusSlider.value = savedRadius;
+    radiusLabel.textContent = savedRadius + ' px';
 
     // Called by the shell on image load / resize.
-    ToolShell._tools['color'].process = function (imageData) {
+    return function (imageData) {
       drawImage();
       if (_sampleImg) runMatch();
       else { clearCircle(); }
     };
-  },
-
-  process: function (imageData) {
-    // Overridden in mount()
   }
 });
