@@ -511,7 +511,7 @@ header h1 {
 .palette-list {
   margin-top: 0.75rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
   gap: 0.4rem 0.6rem;
 }
 
