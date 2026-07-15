@@ -3,6 +3,7 @@
 
 var computeGridLayout = require('../gridOverlay.js').computeGridLayout;
 var computeAutoValue = require('../gridOverlay.js').computeAutoValue;
+var drawGrid = require('../gridOverlay.js').drawGrid;
 
 var passed = 0;
 var failed = 0;
@@ -27,6 +28,39 @@ function assertClose(actual, expected, epsilon, message) {
     console.error('  expected ~' + expected + ', got ' + actual);
   }
 }
+
+// ── Grid drawing ──────────────────────────────────────
+
+// A single cell with diagonals enabled must form a complete X.
+(function testDiagonalsDrawBothDirectionsInEachCell() {
+  var paths = [];
+  var currentPath;
+  var ctx = {
+    save: function () {},
+    restore: function () {},
+    setLineDash: function () {},
+    beginPath: function () { currentPath = []; },
+    moveTo: function (x, y) { currentPath.push(['moveTo', x, y]); },
+    lineTo: function (x, y) { currentPath.push(['lineTo', x, y]); },
+    stroke: function () { paths.push(currentPath); }
+  };
+
+  drawGrid(ctx, 100, 50, {
+    rows: 1,
+    columns: 1,
+    lineColor: '#ffffff',
+    lineWidth: 1,
+    lineStyle: 'solid',
+    showLabels: false,
+    showDiagonals: true,
+    squareCells: false
+  });
+
+  assertEqual(paths, [
+    [['moveTo', 0, 0], ['lineTo', 100, 50]],
+    [['moveTo', 0, 50], ['lineTo', 100, 0]]
+  ], 'diagonals: a cell has both corner-to-corner paths');
+})();
 
 // ── Normal mode (non-square) ──────────────────────────
 

@@ -217,7 +217,7 @@ painting-tools/
 |--------|---------------|----------|
 | `app.js` | `ImageManager`, `ToolShell`, canvas helpers | `ImageManager.load(file)`, `ImageManager.getImageData()`, `ImageManager.onLoad(fn)`. `ToolShell.register({id,name,icon,mount,process,unmount})`, `ToolShell.activate(id)`. |
 | `posterize.js` | `posterize(imageData, N, mode) → {imageData, histogram}` | Pure function. Takes pixel data, level count, and mode (`'grayscale'` or `'color'`). Returns posterized `ImageData` plus histogram bin counts. |
-| `gridOverlay.js` | `computeGridLayout(w, h, opts) → {...}`, `drawGrid(ctx, w, h, opts)` | Pure functions. Computes cell dimensions and centering offsets; draws grid lines, labels, diagonals, and margin dimming via Canvas 2D compositing. |
+| `gridOverlay.js` | `computeGridLayout(w, h, opts) → {...}`, `drawGrid(ctx, w, h, opts)` | Pure functions. Computes cell dimensions and centering offsets; draws grid lines, labels, both corner-to-corner diagonals in each enabled cell, and margin dimming via Canvas 2D compositing. |
 | `edgeDetect.js` | `detectEdges(imageData, {threshold, blur, invert}) → ImageData` | Pure function. Full Canny pipeline (Gaussian blur → Sobel → NMS → hysteresis). Returns clean single-pixel edge sketch on light/dark background. |
 | `lighten.js` | `lighten(imageData, amount) → { imageData }` | Pure function. Blends each pixel toward white by a percentage (0–100%). 0% = no change, 100% = pure white. Alpha preserved. |
 | `colorMix.js` | `averageColor`, `mixPaints` (Kubelka-Munk), `rgbToLab`, `deltaE`, `matchColor`, `DEFAULT_PALETTE` | Pure functions. Subtractive paint mixing in reflectance space + CIELAB ΔE recipe matching against a configurable palette. |

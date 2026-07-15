@@ -52,7 +52,7 @@ Overlay a configurable grid on the uploaded photo to aid accurate initial sketch
 - Line width control (1–4 px)
 - Dashed or solid line style
 - Optional row/column labels (A, B, C… / 1, 2, 3…)
-- Optional diagonals within each cell
+- Optional crossed diagonals within each cell (both corner-to-corner directions)
 - Square cells mode: forces cells to be perfect squares
   - Auto Rows/Cols toggle: when on, adjusting one dimension auto-computes
     the other from the image aspect ratio

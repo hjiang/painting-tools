@@ -143,6 +143,11 @@ function drawGrid(ctx, width, height, options) {
         ctx.moveTo(cx, cy);
         ctx.lineTo(cx + cellW, cy + cellH);
         ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + cellH);
+        ctx.lineTo(cx + cellW, cy);
+        ctx.stroke();
       }
     }
 
