@@ -24,6 +24,9 @@ the Canvas API. Open `index.html` in a browser — it works offline.
 - Functions that are pure and testable go in their own file (e.g.,
   `posterize.js`, `histogram.js`).
 - UI wiring goes in `app.js` (IIFE, no global pollution).
+- New tools currently require both a static `#tool-<id>` view and script tags in
+  `index.html`; load pure dependencies before their tool module and load `app.js`
+  before modules that call `ToolShell.register()`.
 - All JS files use dual-mode exports: global declaration for the browser +
   conditional `module.exports` for Node tests. See `posterize.js` for the
   pattern.
@@ -70,8 +73,8 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    0% = original image, 100% = pure white. Useful for printing faint
    reference images that use less ink and accept pencil/paint markup.
 
-8. **Output promotion**: any tool's processed output can be promoted to become
-   the new source image via `ImageManager.setImageData(result, label)`. The
+8. **Output promotion**: Posterize, Sketch, Grid, and Lighten can promote their
+   processed output via `ImageManager.setImageData(result, label)`. The
    original upload is preserved in `_originalImageData` so `reset()` can restore
    it. A source banner between the tab bar and tool views shows the modified state
    with a "Reset to Original" button. Each tool creates a "Use as New Reference"
@@ -93,6 +96,12 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    The palette includes Ivory Black and Titanium White as value adjusters.
    Saved to `localStorage` as `painting-tools.palette.v2` with v1 migration.
 
+10. **Underpainting precision UI is display-only.** Marker dragging shows a
+    fixed 168px, 4× magnifier sourced only from the underpainting marking canvas;
+    it never warps or displays the reference. The final comparison fits centered
+    up to 960 CSS pixels and zooms 50–400% by resizing the common CSS stage, not
+    either canvas backing. Zoom, pan, and opacity must never rerun the warp.
+
 ## File Structure
 
 ```
@@ -106,12 +115,14 @@ painting-tools/
 ├── edgeDetect.js       # detectEdges(imageData, {threshold, invert}) → ImageData
 ├── lighten.js          # lighten(imageData, amount) → { imageData }
 ├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
-├── colorMix.js         # averageColor, mixPaints (KM), rgbToLab, deltaE, matchColor
-├── posterizeTool.js    # Tool module: posterization UI
-├── sketchTool.js       # Tool module: edge detection / sketch UI
-├── gridTool.js         # Tool module: grid overlay UI
-├── lightenTool.js      # Tool module: lighten UI
-├── colorTool.js        # Tool module: color mixer (sample + recipe + palette)
+├── colorMix.js                    # averageColor, mixPaints (KM), rgbToLab, deltaE, matchColor
+├── underpaintingAlignment.js      # Pure: homography, warp, working-size, quad validation
+├── posterizeTool.js               # Tool module: posterization UI
+├── sketchTool.js                  # Tool module: edge detection / sketch UI
+├── gridTool.js                    # Tool module: grid overlay UI
+├── lightenTool.js                 # Tool module: lighten UI
+├── colorTool.js                   # Tool module: color mixer (sample + recipe + palette)
+├── underpaintingAccuracyTool.js   # Tool: marking magnifier, homography overlay, zoom/pan
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
@@ -120,14 +131,21 @@ painting-tools/
 │       ├── 002-edge-detection-sketch.md
 │       ├── 003-tool-registry.md
 │       ├── 004-grid-overlay.md
-│       └── 005-promote-output.md
+│       ├── 005-promote-output.md
+│       ├── 006-canny-edge-detection.md
+│       ├── 007-color-mixer-accuracy.md
+│       ├── 008-grid-cell-cross-diagonals.md
+│       ├── 009-underpainting-accuracy.md
+│       └── 010-underpainting-magnifier-and-zoom.md
 └── tests/
     ├── posterize.test.js
     ├── edgeDetect.test.js
     ├── gridOverlay.test.js
     ├── lighten.test.js
     ├── colorMix.test.js
-    └── settings.test.js
+    ├── settings.test.js
+    ├── underpaintingAlignment.test.js
+    └── underpaintingAccuracyTool.test.js
 ```
 
 ## When Adding Features

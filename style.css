@@ -33,6 +33,19 @@ header h1 {
   margin-top: 0.25rem;
 }
 
+/* ── Visually hidden (keyboard-accessible) ─── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Drop Zone ─────────────────────────────── */
 #upload-section {
   max-width: 600px;
@@ -692,6 +705,226 @@ header h1 {
 }
 
 /* ── Responsive: Mobile ────────────────────── */
+/* ── Underpainting Check Tool ─────────────────── */
+
+.underpainting-upload-panel,
+.underpainting-marking-panel {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.underpainting-intro {
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.underpainting-note {
+  font-size: 0.85rem;
+  color: #aaa;
+  background: #252540;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  border-left: 3px solid #ffcc00;
+}
+
+.underpainting-file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.underpainting-file-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  background: #3a3a5c;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s, outline-color 0.15s;
+  box-sizing: border-box;
+}
+
+.underpainting-file-label:hover {
+  background: #4a4a6c;
+}
+
+/* Focus indication via :focus-within on the parent row */
+.underpainting-file-row:focus-within .underpainting-file-label {
+  outline: 2px solid #7c8aff;
+  outline-offset: 2px;
+}
+
+/* Fallback for browsers without :focus-within — label click gives focus to input */
+.underpainting-file-label:focus-visible {
+  outline: 2px solid #7c8aff;
+  outline-offset: 2px;
+}
+
+.underpainting-status {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #ffaa44;
+  min-height: 1.2em;
+}
+
+.underpainting-marking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+#underpainting-next-corner {
+  font-weight: 600;
+  color: #ffcc00;
+  font-size: 0.95rem;
+}
+
+.underpainting-marking-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.underpainting-marking-actions .secondary-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.underpainting-stage {
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+  /* Reserve 22 px on each side for the interaction surface that extends
+     beyond the image canvas, so the 44 px boundary hit target does not
+     cause horizontal page overflow at 320 CSS‑px viewports. */
+  max-width: calc(100% - 44px);
+  margin-left: 22px;
+  margin-right: 22px;
+}
+
+/* ≥44 px touch/pointer target for opacity slider */
+#underpainting-opacity {
+  min-height: 44px;
+}
+
+.underpainting-stage canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#underpainting-image-canvas {
+  width: 100%;
+  height: auto;
+}
+
+.underpainting-guide-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Interactive marking canvas accepts pointer events for dragging;
+   prevent browser pan/scroll gesture while doing so. */
+.underpainting-stage canvas:first-child {
+  touch-action: none;
+}
+
+.underpainting-magnifier {
+  position: fixed;
+  z-index: 1000;
+  width: 168px;
+  height: 168px;
+  border: 3px solid #ffcc00;
+  border-radius: 50%;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
+  background: #111;
+  pointer-events: none;
+  image-rendering: auto;
+}
+
+/* Comparison canvases */
+.underpainting-comparison-panel {
+  width: 100%;
+  margin: 1.5rem auto 0;
+}
+
+.underpainting-comparison-viewport {
+  width: 100%;
+  max-width: 960px;
+  max-height: 75vh;
+  margin: 0 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: none;
+  cursor: grab;
+  border-radius: 6px;
+  background: #11111e;
+}
+
+.underpainting-comparison-viewport.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.underpainting-comparison-stage {
+  position: relative;
+  display: block;
+  flex: none;
+}
+
+.underpainting-comparison-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.underpainting-overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.underpainting-comparison-controls {
+  width: min(960px, 100%);
+  margin: 0.9rem auto 0;
+}
+
+.underpainting-zoom-row {
+  margin-top: 0.65rem;
+}
+
+.underpainting-zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.underpainting-zoom-controls .secondary-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+#underpainting-zoom {
+  width: min(360px, 55vw);
+  min-height: 44px;
+}
+
 @media (max-width: 700px) {
   .canvas-pair {
     flex-direction: column;
@@ -707,5 +940,32 @@ header h1 {
 
   .slider-ticks {
     display: none; /* too cramped on mobile */
+  }
+
+  #tab-bar {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  .tab-btn {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .underpainting-marking-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .underpainting-comparison-viewport {
+    max-height: 68vh;
+  }
+
+  .underpainting-zoom-controls {
+    justify-content: flex-start;
+  }
+
+  #underpainting-zoom {
+    width: min(100%, 240px);
   }
 }
