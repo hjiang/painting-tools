@@ -836,9 +836,9 @@ header h1 {
   pointer-events: none;
 }
 
-/* Interactive marking canvas accepts pointer events for dragging;
-   prevent browser pan/scroll gesture while doing so. */
-.underpainting-stage canvas:first-child {
+/* The image canvas is the marking interaction surface; prevent browser
+   pan/scroll gestures while dragging a corner. */
+#underpainting-image-canvas {
   touch-action: none;
 }
 

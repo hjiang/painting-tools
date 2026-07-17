@@ -657,7 +657,6 @@ ToolShell.register({
     // Preserves dragIndex/state until validation/rewarp finishes.
     function completeDrag() {
       if (dragIndex < 0) return;
-      var completedIdx = dragIndex;
       dragIndex = -1;
 
       setState('marking');

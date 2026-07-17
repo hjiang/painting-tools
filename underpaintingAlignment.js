@@ -136,59 +136,47 @@ function computeWorkingSize(width, height, maxPixels, maxEdge) {
 
 // ── Bilinear sampling helper (premultiplied alpha) ────────
 
-function sampleBilinear(data, width, height, sx, sy) {
+function sampleBilinear(data, width, height, sx, sy, out) {
+  // Callers pass one reusable result object; keep the hot pixel loop free of
+  // per-sample arrays and neighbor objects.
+  if (!out) out = { r: 0, g: 0, b: 0, a: 0 };
   var x0 = Math.floor(sx);
   var y0 = Math.floor(sy);
   var x1 = Math.min(x0 + 1, width - 1);
   var y1 = Math.min(y0 + 1, height - 1);
   var tx = sx - x0;
   var ty = sy - y0;
+  var w00 = (1 - tx) * (1 - ty);
+  var w10 = tx * (1 - ty);
+  var w01 = (1 - tx) * ty;
+  var w11 = tx * ty;
 
-  var weights = [
-    (1 - tx) * (1 - ty),
-    tx * (1 - ty),
-    (1 - tx) * ty,
-    tx * ty
-  ];
-
-  var accumAlpha = 0;
-  var accumR = 0;
-  var accumG = 0;
-  var accumB = 0;
-
-  var neighbors = [
-    { x: x0, y: y0 },
-    { x: x1, y: y0 },
-    { x: x0, y: y1 },
-    { x: x1, y: y1 }
-  ];
-
-  for (var k = 0; k < 4; k++) {
-    var idx = (neighbors[k].y * width + neighbors[k].x) * 4;
-    var w = weights[k];
-    if (w === 0) continue;
-    var a = data[idx + 3] / 255;
-    accumAlpha += w * a;
-    accumR += w * a * data[idx];
-    accumG += w * a * data[idx + 1];
-    accumB += w * a * data[idx + 2];
-  }
+  var idx00 = (y0 * width + x0) * 4;
+  var idx10 = (y0 * width + x1) * 4;
+  var idx01 = (y1 * width + x0) * 4;
+  var idx11 = (y1 * width + x1) * 4;
+  var a00 = data[idx00 + 3] / 255;
+  var a10 = data[idx10 + 3] / 255;
+  var a01 = data[idx01 + 3] / 255;
+  var a11 = data[idx11 + 3] / 255;
+  var accumAlpha = w00 * a00 + w10 * a10 + w01 * a01 + w11 * a11;
+  var accumR = w00 * a00 * data[idx00] + w10 * a10 * data[idx10] +
+    w01 * a01 * data[idx01] + w11 * a11 * data[idx11];
+  var accumG = w00 * a00 * data[idx00 + 1] + w10 * a10 * data[idx10 + 1] +
+    w01 * a01 * data[idx01 + 1] + w11 * a11 * data[idx11 + 1];
+  var accumB = w00 * a00 * data[idx00 + 2] + w10 * a10 * data[idx10 + 2] +
+    w01 * a01 * data[idx01 + 2] + w11 * a11 * data[idx11 + 2];
 
   if (accumAlpha <= 1e-12) {
-    return { r: 0, g: 0, b: 0, a: 0 };
+    out.r = 0; out.g = 0; out.b = 0; out.a = 0;
+    return out;
   }
 
-  var outR = Math.round(accumR / accumAlpha);
-  var outG = Math.round(accumG / accumAlpha);
-  var outB = Math.round(accumB / accumAlpha);
-  var outA = Math.round(255 * accumAlpha);
-
-  outR = Math.max(0, Math.min(255, outR));
-  outG = Math.max(0, Math.min(255, outG));
-  outB = Math.max(0, Math.min(255, outB));
-  outA = Math.max(0, Math.min(255, outA));
-
-  return { r: outR, g: outG, b: outB, a: outA };
+  out.r = Math.max(0, Math.min(255, Math.round(accumR / accumAlpha)));
+  out.g = Math.max(0, Math.min(255, Math.round(accumG / accumAlpha)));
+  out.b = Math.max(0, Math.min(255, Math.round(accumB / accumAlpha)));
+  out.a = Math.max(0, Math.min(255, Math.round(255 * accumAlpha)));
+  return out;
 }
 
 // ── resizeImageData ───────────────────────────────────────
@@ -203,6 +191,7 @@ function resizeImageData(source, outputWidth, outputHeight) {
   var srcData = source.data;
 
   var outData = new Uint8ClampedArray(outputWidth * outputHeight * 4);
+  var sampledPixel = { r: 0, g: 0, b: 0, a: 0 };
 
   for (var y = 0; y < outputHeight; y++) {
     for (var x = 0; x < outputWidth; x++) {
@@ -213,7 +202,7 @@ function resizeImageData(source, outputWidth, outputHeight) {
       sx = Math.max(0, Math.min(srcW - 1, sx));
       sy = Math.max(0, Math.min(srcH - 1, sy));
 
-      var pixel = sampleBilinear(srcData, srcW, srcH, sx, sy);
+      var pixel = sampleBilinear(srcData, srcW, srcH, sx, sy, sampledPixel);
       var outIdx = (y * outputWidth + x) * 4;
       outData[outIdx] = pixel.r;
       outData[outIdx + 1] = pixel.g;
@@ -730,6 +719,7 @@ function warpPerspective(source, sourceCorners, outputWidth, outputHeight) {
   var srcH = source.height;
   var srcData = source.data;
   var outData = new Uint8ClampedArray(outputWidth * outputHeight * 4);
+  var sampledPixel = { r: 0, g: 0, b: 0, a: 0 };
 
   for (var y = 0; y < dstH; y++) {
     for (var x = 0; x < dstW; x++) {
@@ -763,7 +753,7 @@ function warpPerspective(source, sourceCorners, outputWidth, outputHeight) {
       sx = Math.max(0, Math.min(srcW - 1, sx));
       sy = Math.max(0, Math.min(srcH - 1, sy));
 
-      var pixel = sampleBilinear(srcData, srcW, srcH, sx, sy);
+      var pixel = sampleBilinear(srcData, srcW, srcH, sx, sy, sampledPixel);
       var idx3 = (y * dstW + x) * 4;
       outData[idx3] = pixel.r;
       outData[idx3 + 1] = pixel.g;
