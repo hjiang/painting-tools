@@ -204,7 +204,6 @@ ToolShell.register({
         comparisonViewport.scrollLeft = maxScrollLeft / 2;
         comparisonViewport.scrollTop = maxScrollTop / 2;
       }
-      comparisonViewport.classList[zoomPercent > 100 ? 'add' : 'remove']('is-zoomed');
     }
 
     function updateComparisonFit() {
