@@ -220,7 +220,7 @@ ToolShell.register({
     function updateCssLayoutAndGuides() {
       if (!referenceSize || !referenceCanvas) return true;
       updateComparisonFit();
-      if (state === 'marking' || state === 'aligned') {
+      if (state === 'marking' || state === 'aligned' || state === 'error') {
         return drawGuides();
       }
       return true;
@@ -499,24 +499,27 @@ ToolShell.register({
 
       try {
         setCanvasBackingSize(guideCanvas, Math.round(dispW), Math.round(dispH));
+        var guideW = guideCanvas.width;
+        var guideH = guideCanvas.height;
         var ctx = guideCanvas.getContext('2d');
         if (!ctx) throw new Error('Guide canvas 2D context unavailable.');
-        ctx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
+        ctx.clearRect(0, 0, guideW, guideH);
 
         if (points.length === 0) return true;
 
-        // Draw polygon
+        // Draw polygon in backing-pixel coordinates. The backing dimensions
+        // may differ fractionally from the CSS rect after integer rounding.
         ctx.beginPath();
         for (var i = 0; i < points.length; i++) {
-          var px = (points[i].x + 0.5) * dispW / bmpW;
-          var py = (points[i].y + 0.5) * dispH / bmpH;
+          var px = (points[i].x + 0.5) * guideW / bmpW;
+          var py = (points[i].y + 0.5) * guideH / bmpH;
           if (i === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         }
         // Close if 4 points
         if (points.length === 4) {
-          var p0x = (points[0].x + 0.5) * dispW / bmpW;
-          var p0y = (points[0].y + 0.5) * dispH / bmpH;
+          var p0x = (points[0].x + 0.5) * guideW / bmpW;
+          var p0y = (points[0].y + 0.5) * guideH / bmpH;
           ctx.lineTo(p0x, p0y);
         }
         ctx.strokeStyle = '#ffcc00';
@@ -528,8 +531,8 @@ ToolShell.register({
         // Draw handles
         var colors = ['#ff4444', '#44ff44', '#4444ff', '#ffcc00'];
         for (var j = 0; j < points.length; j++) {
-          var cx = (points[j].x + 0.5) * dispW / bmpW;
-          var cy = (points[j].y + 0.5) * dispH / bmpH;
+          var cx = (points[j].x + 0.5) * guideW / bmpW;
+          var cy = (points[j].y + 0.5) * guideH / bmpH;
 
           // Outer circle
           ctx.beginPath();
