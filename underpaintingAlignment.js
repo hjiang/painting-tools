@@ -693,12 +693,7 @@ function warpPerspective(source, sourceCorners, outputWidth, outputHeight) {
   }
   var validation = validateCornerQuad(sourceCorners, source.width, source.height);
   if (!validation.valid) {
-    // Non-finite after the pre-check signals a programming error; throw TypeError.
-    // Geometrically invalid corners (self-intersecting, collinear, etc.) throw RangeError.
-    if (validation.code === 'non-finite') {
-      throw new TypeError('Invalid source corners: ' + validation.message);
-    }
-    throw new RangeError('Invalid source corners: ' + validation.code);
+    throw new RangeError('Invalid source corners: ' + validation.message);
   }
 
   // Destination corners in pixel-center convention
