@@ -291,6 +291,88 @@
           </div>
         </div>
       </div>
+
+      <!-- ── Underpainting Accuracy Tool View ─────── -->
+      <div class="tool-view hidden" id="tool-underpainting-accuracy">
+        <div class="underpainting-upload-panel" id="underpainting-upload-panel">
+          <p class="underpainting-intro">
+            Upload or photograph your underpainting to compare it with the
+            reference image. Mark the four corners of the canvas so the tool
+            can rectify the perspective.
+          </p>
+          <p class="underpainting-note">
+            <strong>Important:</strong> The reference must represent the whole
+            canvas. Corner-placement errors can look like painting errors.
+          </p>
+          <div class="underpainting-file-row">
+            <label for="underpainting-file" class="underpainting-file-label">
+              📷 Choose underpainting photo
+            </label>
+            <input type="file" id="underpainting-file"
+                   accept="image/jpeg,image/png,image/webp"
+                   class="visually-hidden">
+          </div>
+          <div id="underpainting-status"
+               role="status" aria-live="polite" class="underpainting-status"></div>
+        </div>
+
+        <div class="underpainting-marking-panel hidden" id="underpainting-marking-panel">
+          <div class="underpainting-marking-header">
+            <span id="underpainting-next-corner">Mark top-left corner</span>
+            <div class="underpainting-marking-actions">
+              <button id="underpainting-undo" class="secondary-btn">↩ Undo Last</button>
+              <button id="underpainting-reset" class="secondary-btn">✖ Reset Corners</button>
+            </div>
+          </div>
+          <div class="underpainting-stage" id="underpainting-stage">
+            <canvas id="underpainting-image-canvas"></canvas>
+            <canvas id="underpainting-guide-canvas"
+                    class="underpainting-guide-canvas"></canvas>
+          </div>
+          <canvas id="underpainting-magnifier"
+                  class="underpainting-magnifier hidden"
+                  width="168" height="168" aria-hidden="true"></canvas>
+        </div>
+
+        <div class="underpainting-comparison-panel hidden" id="underpainting-comparison-panel">
+          <div class="underpainting-comparison-viewport"
+               id="underpainting-comparison-viewport" tabindex="0"
+               role="region"
+               aria-label="Zoomed underpainting comparison; drag or use arrow keys to pan">
+            <div class="underpainting-comparison-stage" id="underpainting-comparison-stage">
+              <canvas id="underpainting-reference-canvas"></canvas>
+              <canvas id="underpainting-aligned-canvas"
+                      class="underpainting-overlay-canvas"></canvas>
+            </div>
+          </div>
+          <div class="underpainting-comparison-controls">
+            <div class="control-row">
+              <label for="underpainting-opacity" class="control-label">
+                Alignment opacity: <strong id="underpainting-opacity-label">50%</strong>
+              </label>
+              <input type="range" id="underpainting-opacity"
+                     min="0" max="100" value="50" step="1">
+            </div>
+            <div class="control-row underpainting-zoom-row">
+              <span class="control-label">
+                Comparison zoom: <strong id="underpainting-zoom-label"
+                                         aria-live="polite">100%</strong>
+              </span>
+              <div class="underpainting-zoom-controls">
+                <button id="underpainting-zoom-out" class="secondary-btn"
+                        type="button" aria-label="Zoom out">−</button>
+                <input type="range" id="underpainting-zoom"
+                       min="50" max="400" value="100" step="25"
+                       aria-label="Comparison zoom percentage">
+                <button id="underpainting-zoom-in" class="secondary-btn"
+                        type="button" aria-label="Zoom in">+</button>
+                <button id="underpainting-zoom-reset" class="secondary-btn"
+                        type="button">Reset zoom</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -299,13 +381,15 @@
   <script src="edgeDetect.js"></script>
   <script src="lighten.js"></script>
   <script src="gridOverlay.js"></script>
+  <script src="colorMix.js"></script>
+  <script src="underpaintingAlignment.js"></script>
   <script src="settings.js"></script>
   <script src="app.js"></script>
   <script src="posterizeTool.js"></script>
   <script src="sketchTool.js"></script>
   <script src="gridTool.js"></script>
-  <script src="colorMix.js"></script>
   <script src="colorTool.js"></script>
   <script src="lightenTool.js"></script>
+  <script src="underpaintingAccuracyTool.js"></script>
 </body>
 </html>

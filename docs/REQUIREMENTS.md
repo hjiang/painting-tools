@@ -74,14 +74,56 @@ For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 
 ### F9: Promote Output to Reference Image
-After processing an image with any tool, promote the output to become the new
-source image for all tools. Enables operation chaining — e.g., lighten then
-posterize, or posterize then add a grid.
-- "Use as New Reference" button in each tool's download section
+Posterize, Sketch, Grid, and Lighten can each promote their output to become
+the new source image for all processing tools. This enables operation chaining
+— e.g., lighten then posterize, or posterize then add a grid.
+- "Use as New Reference" button in the download section of each promoting tool
 - Source banner shows what was applied and offers a "Reset to Original" button
 - Preserves the originally uploaded image for reset at any time
+- **Excluded:** Color Mixer and Underpainting Check are visual-only analysis
+  tools and do not produce a promotable result.
 
-### F10: Color Mixer / Paint Recipe
+### F10: Underpainting Accuracy Overlay
+Upload a photograph of an underpainting, mark the four corners of its canvas,
+rectify the photographed canvas to match the reference-image perspective, and
+visually compare the two by adjusting overlay opacity.
+
+- **One reference, one underpainting.** The image already loaded into
+  `ImageManager` is the reference. The tool owns a separate in-memory
+  underpainting upload.
+- **Four draggable corner markers** in semantic order:
+  top-left → top-right → bottom-right → bottom-left. Supports rotated and
+  upside-down photographs — the user identifies canvas corners, not the tool.
+- **Projective warp** uses a four-point homography, not an affine stretch.
+- **Visual comparison only** — the reference is the bottom layer and the
+  rectified underpainting is the top layer with a 0–100% opacity slider.
+  Default opacity is 50%.
+- **Capped working resolution** (~2 MP) for mobile performance. No
+  full-resolution aligned result is created.
+- **Precision drag magnifier:** while an existing corner marker is dragged, a
+  4×, 168-CSS-pixel loupe shows only the underpainting photograph around the
+  marker with a centered crosshair. It avoids the pointer and viewport edges,
+  hides when dragging ends, and never runs the projective warp.
+- **Large centered comparison:** at 100% zoom, the layered comparison fits the
+  available width up to 960 CSS pixels and is centered. Small working images may
+  be CSS-upscaled for inspection without changing their backing resolution.
+- **Comparison zoom and pan:** zoom is adjustable from 50–400% in 25% steps via
+  a slider, −/+, and Reset controls. Both reference and aligned layers zoom
+  together using CSS only; zoom and pan never resize backing canvases or rerun
+  the warp. The corner-marking image itself is not zoomed.
+- **Undo Last** and **Reset Corners** controls. Undo removes the most recently
+  placed point; Reset clears all points and hides the comparison.
+- **Recoverable errors:** invalid/corrupt uploads, decode failures, singular
+  geometry, and out-of-memory states are caught and displayed without breaking
+  the tab.
+- **Assumptions:** The reference must represent the whole physical canvas,
+  including any crop and aspect ratio. Corner-placement errors can look like
+  painting errors.
+- **Out of scope:** automatic corner detection, edge/difference/heatmap/pass-fail
+  modes, blink/wipe view, pinch/wheel zoom gestures, numerical scores, download,
+  print, persistence, promotion, and full-resolution rectification.
+
+### F11: Color Mixer / Paint Recipe
 Sample a color from the photo and show how to mix it from a paint palette.
 - Click the image to sample the **average color** of pixels inside a small
   circle (configurable radius).
