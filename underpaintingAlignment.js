@@ -720,13 +720,21 @@ function warpPerspective(source, sourceCorners, outputWidth, outputHeight) {
   var srcData = source.data;
   var outData = new Uint8ClampedArray(outputWidth * outputHeight * 4);
   var sampledPixel = { r: 0, g: 0, b: 0, a: 0 };
+  // Hoist validated coefficients out of the hot raster loop. Keep
+  // mapHomographyPoint as the public/tested helper, but avoid its validation
+  // and mapped-point allocation for every destination pixel.
+  var h00 = H[0], h01 = H[1], h02 = H[2];
+  var h10 = H[3], h11 = H[4], h12 = H[5];
+  var h20 = H[6], h21 = H[7], h22 = H[8];
 
   for (var y = 0; y < dstH; y++) {
     for (var x = 0; x < dstW; x++) {
-      var mapped = mapHomographyPoint(H, x, y);
-      if (mapped === null) {
-        // Transparent
-        var outIdx = (y * dstW + x) * 4;
+      var denominator = h20 * x + h21 * y + h22;
+      var denominatorScale = Math.abs(h20 * x) + Math.abs(h21 * y) + Math.abs(h22);
+      var outIdx = (y * dstW + x) * 4;
+      if (!Number.isFinite(denominator) ||
+          !Number.isFinite(denominatorScale) || denominatorScale === 0 ||
+          Math.abs(denominator) <= 1e-12 * denominatorScale) {
         outData[outIdx] = 0;
         outData[outIdx + 1] = 0;
         outData[outIdx + 2] = 0;
@@ -734,18 +742,24 @@ function warpPerspective(source, sourceCorners, outputWidth, outputHeight) {
         continue;
       }
 
-      var sx = mapped.x;
-      var sy = mapped.y;
+      var sx = (h00 * x + h01 * y + h02) / denominator;
+      var sy = (h10 * x + h11 * y + h12) / denominator;
+      if (!Number.isFinite(sx) || !Number.isFinite(sy)) {
+        outData[outIdx] = 0;
+        outData[outIdx + 1] = 0;
+        outData[outIdx + 2] = 0;
+        outData[outIdx + 3] = 0;
+        continue;
+      }
 
       // Check boundary epsilon
       if (sx < -BOUNDARY_EPSILON || sx > srcW - 1 + BOUNDARY_EPSILON ||
           sy < -BOUNDARY_EPSILON || sy > srcH - 1 + BOUNDARY_EPSILON) {
         // Transparent
-        var idx2 = (y * dstW + x) * 4;
-        outData[idx2] = 0;
-        outData[idx2 + 1] = 0;
-        outData[idx2 + 2] = 0;
-        outData[idx2 + 3] = 0;
+        outData[outIdx] = 0;
+        outData[outIdx + 1] = 0;
+        outData[outIdx + 2] = 0;
+        outData[outIdx + 3] = 0;
         continue;
       }
 
@@ -754,11 +768,10 @@ function warpPerspective(source, sourceCorners, outputWidth, outputHeight) {
       sy = Math.max(0, Math.min(srcH - 1, sy));
 
       var pixel = sampleBilinear(srcData, srcW, srcH, sx, sy, sampledPixel);
-      var idx3 = (y * dstW + x) * 4;
-      outData[idx3] = pixel.r;
-      outData[idx3 + 1] = pixel.g;
-      outData[idx3 + 2] = pixel.b;
-      outData[idx3 + 3] = pixel.a;
+      outData[outIdx] = pixel.r;
+      outData[outIdx + 1] = pixel.g;
+      outData[outIdx + 2] = pixel.b;
+      outData[outIdx + 3] = pixel.a;
     }
   }
 
