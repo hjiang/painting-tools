@@ -754,14 +754,9 @@ header h1 {
   background: #4a4a6c;
 }
 
-/* Focus indication via :focus-within on the parent row */
+/* The visually hidden file input receives keyboard focus; focus-within
+   exposes that focus on the visible chooser label. */
 .underpainting-file-row:focus-within .underpainting-file-label {
-  outline: 2px solid #7c8aff;
-  outline-offset: 2px;
-}
-
-/* Fallback for browsers without :focus-within — label click gives focus to input */
-.underpainting-file-label:focus-visible {
   outline: 2px solid #7c8aff;
   outline-offset: 2px;
 }

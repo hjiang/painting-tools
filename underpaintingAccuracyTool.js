@@ -588,7 +588,11 @@ ToolShell.register({
           referenceSize.width, referenceSize.height);
         setCanvasBackingSize(alignedCanvas,
           referenceSize.width, referenceSize.height);
-        alignedCanvas.getContext('2d').putImageData(warped, 0, 0);
+        var alignedContext = alignedCanvas.getContext('2d');
+        if (!alignedContext) {
+          throw new Error('Aligned canvas 2D context unavailable.');
+        }
+        alignedContext.putImageData(warped, 0, 0);
         alignedCanvas.style.opacity = String(Number(opacityInput.value) / 100);
         comparisonPanel.classList.remove('hidden');
         setState('aligned');
@@ -912,6 +916,26 @@ ToolShell.register({
       comparisonViewport.classList.remove('is-panning');
     }
 
+    function onPanKeyDown(e) {
+      var step = e.shiftKey ? 120 : 40;
+      var dx = 0;
+      var dy = 0;
+      if (e.key === 'ArrowLeft') dx = -step;
+      else if (e.key === 'ArrowRight') dx = step;
+      else if (e.key === 'ArrowUp') dy = -step;
+      else if (e.key === 'ArrowDown') dy = step;
+      else return;
+
+      var oldLeft = comparisonViewport.scrollLeft;
+      var oldTop = comparisonViewport.scrollTop;
+      comparisonViewport.scrollLeft = Math.max(0, oldLeft + dx);
+      comparisonViewport.scrollTop = Math.max(0, oldTop + dy);
+      if (comparisonViewport.scrollLeft !== oldLeft ||
+          comparisonViewport.scrollTop !== oldTop) {
+        e.preventDefault();
+      }
+    }
+
     // ── Interaction surface ────────────────────────────
     // Create an invisible overlay extending 22px beyond the image canvas
     // so boundary handles retain a full ≥44-CSS-pixel touch/pointer target.
@@ -959,6 +983,7 @@ ToolShell.register({
     comparisonViewport.addEventListener('pointerup', finishPan);
     comparisonViewport.addEventListener('pointercancel', finishPan);
     comparisonViewport.addEventListener('lostpointercapture', finishPan);
+    comparisonViewport.addEventListener('keydown', onPanKeyDown);
 
     hideMagnifier();
     applyComparisonZoom(100, false);
