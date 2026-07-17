@@ -2,7 +2,7 @@
 // Tool module for the Underpainting Check — upload, mark corners,
 // rectify via homography, and compare with opacity.
 // Depends on: underpaintingAlignment.js (pure geometry)
-//             app.js (ImageManager, ToolShell, createPromoteButton)
+//             app.js (ToolShell registration)
 
 ToolShell.register({
   id: 'underpainting-accuracy',

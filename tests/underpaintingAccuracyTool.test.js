@@ -151,7 +151,9 @@ function createMockCanvasContext(canvas) {
     },
     fillRect: function () {},
     getImageData: function (x, y, w, h) {
-      if (paintingData && paintingData.w === w && paintingData.h === h) return paintingData;
+      if (paintingData && paintingData.w === w && paintingData.h === h) {
+        return paintingData.data;
+      }
       return new global.ImageData(new Uint8ClampedArray(w * h * 4), w, h);
     },
     setLineDash: function () {},
