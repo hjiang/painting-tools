@@ -293,7 +293,11 @@ function validateCornerQuad(points, width, height) {
     var o3 = orient(c.x, c.y, d.x, d.y, a.x, a.y);
     var o4 = orient(c.x, c.y, d.x, d.y, b.x, b.y);
 
-    if (o1 !== o2 && o3 !== o4) return true;
+    // The general crossing case requires four definite orientations. If an
+    // orientation is within EPS of zero, only the explicit on-segment checks
+    // below can establish a touching/collinear intersection.
+    if (o1 !== 0 && o2 !== 0 && o3 !== 0 && o4 !== 0 &&
+        o1 !== o2 && o3 !== o4) return true;
 
     // Collinear cases with on-segment check
     if (o1 === 0 && onSegment(a, b, c)) return true;

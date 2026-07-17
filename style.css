@@ -704,8 +704,7 @@ header h1 {
   border-top: 1px solid #2a2a45;
 }
 
-/* ── Responsive: Mobile ────────────────────── */
-/* ── Underpainting Check Tool ─────────────────── */
+/* ── Underpainting Check Tool: base styles ─────── */
 
 .underpainting-upload-panel,
 .underpainting-marking-panel {
@@ -920,6 +919,7 @@ header h1 {
   min-height: 44px;
 }
 
+/* ── Responsive: Mobile ────────────────────── */
 @media (max-width: 700px) {
   .canvas-pair {
     flex-direction: column;
