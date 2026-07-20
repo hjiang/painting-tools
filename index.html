@@ -34,6 +34,44 @@
 
     <!-- Tool views (shown/hidden by tab selection) -->
     <section id="tool-views" class="hidden">
+      <!-- ── View Tool View ───────────────────────── -->
+      <div class="tool-view hidden" id="tool-view">
+        <div class="canvas-box view-canvas-box">
+          <h3>View</h3>
+          <canvas id="view-canvas"></canvas>
+        </div>
+
+        <div class="controls">
+          <div class="control-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="view-flip">
+              <span>Flip Horizontal</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="view-grayscale">
+              <span>Grayscale</span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <label for="view-blur" class="control-label">
+              Squint (blur): <strong id="view-blur-label">0</strong> px
+            </label>
+            <div class="slider-stack">
+              <input type="range" id="view-blur" min="0" max="8" value="0" step="1">
+              <div class="slider-ticks">
+                <span>0</span><span>2</span><span>4</span><span>6</span><span>8</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="download-section">
+          <span id="view-promote-spot"></span>
+          <button id="download-view-btn" class="download-btn">⬇ Download View PNG</button>
+        </div>
+      </div>
+
       <!-- ── Posterize Tool View ───────────────────── -->
       <div class="tool-view hidden" id="tool-posterize">
         <div class="canvas-pair">
@@ -183,9 +221,11 @@
             <label for="lighten-amount" class="control-label">
               Amount: <strong id="lighten-amount-label">40%</strong>
             </label>
-            <input type="range" id="lighten-amount" min="0" max="100" value="40" step="1">
-            <div class="slider-ticks">
-              <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+            <div class="slider-stack">
+              <input type="range" id="lighten-amount" min="0" max="100" value="40" step="1">
+              <div class="slider-ticks">
+                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -383,8 +423,10 @@
   <script src="gridOverlay.js"></script>
   <script src="colorMix.js"></script>
   <script src="underpaintingAlignment.js"></script>
+  <script src="viewTransforms.js"></script>
   <script src="settings.js"></script>
   <script src="app.js"></script>
+  <script src="viewTool.js"></script>
   <script src="posterizeTool.js"></script>
   <script src="sketchTool.js"></script>
   <script src="gridTool.js"></script>

@@ -74,7 +74,7 @@ For a given `N`, show ONLY the shapes that belong to a specific value band.
 Useful for tracing or studying individual value masses.
 
 ### F9: Promote Output to Reference Image
-Posterize, Sketch, Grid, and Lighten can each promote their output to become
+Posterize, Sketch, Grid, Lighten, and View can each promote their output to become
 the new source image for all processing tools. This enables operation chaining
 — e.g., lighten then posterize, or posterize then add a grid.
 - "Use as New Reference" button in the download section of each promoting tool
@@ -122,6 +122,20 @@ visually compare the two by adjusting overlay opacity.
 - **Out of scope:** automatic corner detection, edge/difference/heatmap/pass-fail
   modes, blink/wipe view, pinch/wheel zoom gestures, numerical scores, download,
   print, persistence, promotion, and full-resolution rectification.
+
+### F12: Flip, Squint & Grayscale View
+View the reference photo with any combination of horizontal flip, grayscale
+conversion, and adjustable blur (squint simulation). All three are real-time
+pure-pixel transforms — display, download, and promote at full resolution.
+- **Flip Horizontal** — mirror the image to expose drawing errors
+- **Grayscale** — desaturate using Rec. 601 luminance to judge values
+  independent of hue
+- **Squint (blur)** — adjustable box blur (0–8 px radius) to see value masses
+  clearly, simulating squinting
+- Pipeline order is fixed: flip → grayscale → blur
+- Controls persist across reload via localStorage
+- Download the view result at original resolution as PNG
+- "Use as New Reference" enables chaining (e.g., flip then posterize)
 
 ### F11: Color Mixer / Paint Recipe
 Sample a color from the photo and show how to mix it from a paint palette.

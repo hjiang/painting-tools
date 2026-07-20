@@ -198,6 +198,29 @@ header h1 {
   color: #666;
 }
 
+/* Slider stacked directly above its tick labels. Prefer this over the
+   bare .slider-ticks margin-left offset: alignment never depends on the
+   control label's width or on the browser's default range width. */
+.slider-stack {
+  flex: 1;
+  max-width: 400px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.slider-stack input[type="range"] {
+  width: 100%;
+  accent-color: #7c8aff;
+  height: 6px;
+}
+
+.slider-stack .slider-ticks {
+  margin-left: 0;
+  max-width: none;
+}
+
 /* ── Mode Radio Buttons ────────────────────── */
 .mode-row {
   gap: 0.5rem;

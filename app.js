@@ -355,7 +355,7 @@
     if (fileInput.files.length > 0) {
       ImageManager.load(fileInput.files[0]);
       // Activate first tool after image load
-      ToolShell.activate('posterize');
+      ToolShell.activate('view');
     }
   });
 
@@ -373,7 +373,7 @@
     dropZone.classList.remove('drag-over');
     if (e.dataTransfer.files.length > 0) {
       ImageManager.load(e.dataTransfer.files[0]);
-      ToolShell.activate('posterize');
+      ToolShell.activate('view');
     }
   });
 
