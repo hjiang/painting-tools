@@ -3,7 +3,7 @@
 Captured 2026-07-20. Ordered within each category by expected value/effort ratio.
 Ideas with a plan document link to it; the rest are unscheduled.
 
-**Top 4 (planned):** #6 (plan 012) · #8 (plan 013) · #7 (plan 014) · #14 (plan 015).
+**Top 3 (planned):** #8 (plan 013) · #7 (plan 014) · #14 (plan 015).
 
 ## Quick Wins
 
@@ -26,7 +26,7 @@ Ideas with a plan document link to it; the rest are unscheduled.
 6. **Value band isolation (F8 stretch goal)** — click a histogram bin in
    Posterize to show only the pixels in that band (black on white for
    tracing). Completes the posterize/histogram story.
-   → `docs/plans/012-value-isolation.md`
+   → `docs/plans/012-value-isolation.md` ✅
 7. **Simplify-before-posterize** — optional smoothing pass before
    posterization so noisy photos produce clean, paintable value masses
    instead of speckled bands.

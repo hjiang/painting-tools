@@ -270,6 +270,18 @@ header h1 {
   height: auto;
   border-radius: 6px;
   background: #111;
+  cursor: pointer;
+}
+
+.histogram-hint {
+  font-size: 0.78rem;
+  color: #666;
+  margin-top: 0.4rem;
+}
+
+.histogram-section .secondary-btn {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
 }
 
 /* ── Sketch Section ───────────────────────── */

@@ -16,8 +16,14 @@ ToolShell.register({
     var originalCanvas = document.getElementById('original-canvas');
     var resultCanvas = document.getElementById('result-canvas');
     var histogramCanvas = document.getElementById('histogram-canvas');
+    var allBandsBtn = document.getElementById('all-bands-btn');
+    var isolateHint = document.getElementById('isolate-hint');
 
     var _lastResult = null;
+    var _lastImageData = null;
+    var _lastN = -1;
+    var _lastMode = '';
+    var _selectedBin = Settings.getInt('painting-tools.posterize.isolateBand', -1);
 
     function getN() {
       return parseInt(valueSlider.value, 10);
@@ -25,6 +31,16 @@ ToolShell.register({
 
     function getMode() {
       return getCheckedValue(modeRadios, 'grayscale');
+    }
+
+    function updateAllBandsButton() {
+      if (_selectedBin >= 0 && _selectedBin < getN()) {
+        if (allBandsBtn) allBandsBtn.classList.remove('hidden');
+        if (isolateHint) isolateHint.classList.add('hidden');
+      } else {
+        if (allBandsBtn) allBandsBtn.classList.add('hidden');
+        if (isolateHint) isolateHint.classList.remove('hidden');
+      }
     }
 
     function render() {
@@ -35,31 +51,121 @@ ToolShell.register({
       var mode = getMode();
       valueLabel.textContent = N;
 
-      _lastResult = posterize(imageData, N, mode);
+      if (imageData !== _lastImageData || N !== _lastN || mode !== _lastMode) {
+        _lastResult = posterize(imageData, N, mode);
+        _lastImageData = imageData;
+        _lastN = N;
+        _lastMode = mode;
+      }
 
       drawImageDataToCanvas(imageData, originalCanvas);
-      drawImageDataToCanvas(_lastResult.imageData, resultCanvas);
-      drawHistogram(histogramCanvas, _lastResult.histogram, N);
+
+      if (_selectedBin >= 0 && _selectedBin < N) {
+        // Show isolated band mask
+        var isolated = isolateBand(imageData, N, _selectedBin, mode);
+        drawImageDataToCanvas(isolated.imageData, resultCanvas);
+        drawHistogram(histogramCanvas, _lastResult.histogram, N, { selectedBin: _selectedBin });
+      } else {
+        // Show normal posterized result
+        drawImageDataToCanvas(_lastResult.imageData, resultCanvas);
+        drawHistogram(histogramCanvas, _lastResult.histogram, N);
+      }
+
+      updateAllBandsButton();
     }
 
-    valueSlider.addEventListener('input', render);
+    valueSlider.addEventListener('input', function () {
+      // Changing N clears selection
+      _selectedBin = -1;
+      Settings.set('painting-tools.posterize.isolateBand', -1);
+      render();
+    });
+
     for (var i = 0; i < modeRadios.length; i++) {
-      modeRadios[i].addEventListener('change', render);
+      modeRadios[i].addEventListener('change', function () {
+        // Changing mode clears selection
+        _selectedBin = -1;
+        Settings.set('painting-tools.posterize.isolateBand', -1);
+        render();
+      });
+    }
+
+    // ── Histogram click: select/deselect a band ─────────
+
+    histogramCanvas.addEventListener('click', function (e) {
+      var imageData = ImageManager.getImageData();
+      if (!imageData) return;
+
+      var N = getN();
+      // Scale CSS offset to canvas-pixel space for hit-test alignment
+      var cssW = histogramCanvas.clientWidth || histogramCanvas.width;
+      var canvasW = histogramCanvas.width;
+      var bin = binAtX(e.offsetX * (canvasW / cssW), canvasW, N);
+
+      if (bin >= 0) {
+        if (_selectedBin === bin) {
+          // Clicking the same bin again → deselect
+          _selectedBin = -1;
+        } else {
+          _selectedBin = bin;
+        }
+      } else {
+        // Clicked outside chart → deselect
+        _selectedBin = -1;
+      }
+
+      Settings.set('painting-tools.posterize.isolateBand', _selectedBin);
+      render();
+    });
+
+    // ── "All bands" button ──────────────────────────────
+
+    if (allBandsBtn) {
+      allBandsBtn.addEventListener('click', function () {
+        _selectedBin = -1;
+        Settings.set('painting-tools.posterize.isolateBand', -1);
+        render();
+      });
     }
 
     // ── Promote button ─────────────────────────
 
     var promoteBtn = createPromoteButton(
-      function () { return _lastResult ? _lastResult.imageData : null; },
-      function () { return 'Posterized (' + getN() + ' values, ' + getMode() + ')'; }
+      function () {
+        if (!_lastResult) return null;
+        if (_selectedBin >= 0 && _selectedBin < getN()) {
+          var imageData = ImageManager.getImageData();
+          if (!imageData) return null;
+          var isolated = isolateBand(imageData, getN(), _selectedBin, getMode());
+          return isolated.imageData;
+        }
+        return _lastResult.imageData;
+      },
+      function () {
+        if (_selectedBin >= 0 && _selectedBin < getN()) {
+          return 'Isolated band ' + (_selectedBin + 1) + ' (' + getN() + ' values)';
+        }
+        return 'Posterized (' + getN() + ' values, ' + getMode() + ')';
+      }
     );
     document.getElementById('posterize-promote-spot').appendChild(promoteBtn);
 
     downloadBtn.addEventListener('click', function () {
-      if (_lastResult) {
-        downloadImageData(_lastResult.imageData, 'posterized.png');
+      var result = null;
+      if (_selectedBin >= 0 && _selectedBin < getN()) {
+        var imageData = ImageManager.getImageData();
+        if (imageData) {
+          result = isolateBand(imageData, getN(), _selectedBin, getMode()).imageData;
+        }
+      } else if (_lastResult) {
+        result = _lastResult.imageData;
+      }
+      if (result) {
+        downloadImageData(result, 'posterized.png');
       }
     });
+
+    updateAllBandsButton();
 
     return render;
   }

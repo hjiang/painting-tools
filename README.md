@@ -10,7 +10,7 @@ output promotion; Color Mixer and Underpainting Check are visual-only and do not
 
 | Tab | What It Does |
 |-----|-------------|
-| **Posterize** | Reduce the photo to N value levels (2–12), grayscale or color |
+| **Posterize** | Reduce the photo to N value levels (2–12), grayscale or color; click a histogram bin to isolate that value band |
 | **Sketch** | Canny edge detection → line drawing with adjustable threshold |
 | **Grid** | Overlay a configurable grid (square or fixed cells, with diagonals) |
 | **Lighten** | Blend toward white for printable reference images |
@@ -69,15 +69,15 @@ for t in tests/*.test.js; do node "$t"; done
 | `style.css` | Dark theme, responsive layout |
 | `app.js` | ImageManager, ToolShell, output promotion, wiring |
 | `settings.js` | Typed, error-safe localStorage wrappers |
-| `posterize.js` | Core algorithm: grayscale & color posterization |
-| `histogram.js` | Value-distribution bar chart |
+| `posterize.js` | Core algorithm: grayscale & color posterization, band-index helpers (`bandIndexForValue`, `bandIndexForPixel`), band isolation (`isolateBand`) |
+| `histogram.js` | Value-distribution bar chart with hit-testing (`binAtX`, `HIST_PAD`) and selected-bin highlight |
 | `edgeDetect.js` | Canny edge detection → line sketch |
 | `gridOverlay.js` | Grid layout computation & canvas drawing |
 | `lighten.js` | Blend pixels toward white for printing |
 | `colorMix.js` | Subtractive (Kubelka-Munk) mixing, ΔE matching, palette |
 | `underpaintingAlignment.js` | Pure geometry: homography solving, bilinear warp, corner validation |
 | `viewTransforms.js` | Pure functions: flip, grayscale, box blur for View tool |
-| `posterizeTool.js` | Tool module: posterization UI |
+| `posterizeTool.js` | Tool module: posterization UI with click-to-isolate value bands |
 | `sketchTool.js` | Tool module: edge detection / sketch UI |
 | `gridTool.js` | Tool module: grid overlay UI |
 | `lightenTool.js` | Tool module: lighten UI |
@@ -85,6 +85,8 @@ for t in tests/*.test.js; do node "$t"; done
 | `colorTool.js` | Tool module: color mixer (sample + recipe + palette) |
 | `underpaintingAccuracyTool.js` | Tool module: upload, precision corner magnifier, projective alignment, opacity comparison, CSS-only zoom/pan |
 | `tests/posterize.test.js` | 40 unit tests |
+| `tests/histogram.test.js` | 24 unit tests |
+| `tests/isolateBand.test.js` | 48 unit tests |
 | `tests/edgeDetect.test.js` | 672 unit tests |
 | `tests/gridOverlay.test.js` | 58 unit tests |
 | `tests/lighten.test.js` | 89 unit tests |

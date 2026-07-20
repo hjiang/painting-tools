@@ -114,6 +114,17 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
     localStorage. The View tool is the first tab and the landing tool after
     image upload.
 
+12. **Value band isolation uses a black-on-white mask.** Clicking a histogram
+    bin shows only the pixels in that value band — selected band → black
+    (#000), all others → white (#fff), alpha preserved. The band assignment
+    is shared via `bandIndexForValue`/`bandIndexForPixel` helpers extracted
+    from `posterize()`, guaranteeing zero drift between posterize output and
+    isolation mask. The selected band persists in localStorage
+    (`painting-tools.posterize.isolateBand`, -1 = off). Changing N or mode
+    clears the selection. The "All Bands" button restores the normal
+    posterized view. The histogram highlights the selected bin in the accent
+    color.
+
 ## File Structure
 
 ```
@@ -122,15 +133,15 @@ painting-tools/
 ├── style.css           # Dark theme, responsive layout
 ├── app.js              # ImageManager, ToolShell, canvas/radio helpers (IIFE)
 ├── settings.js         # Settings: typed, error-safe localStorage wrappers
-├── posterize.js        # posterize(imageData, N, mode) → { imageData, histogram }
-├── histogram.js        # drawHistogram(canvas, bins, N)
+├── posterize.js        # posterize, bandIndexForValue, bandIndexForPixel, isolateBand
+├── histogram.js        # drawHistogram(canvas, bins, N, opts?), binAtX, HIST_PAD
 ├── edgeDetect.js       # detectEdges(imageData, {threshold, invert}) → ImageData
 ├── lighten.js          # lighten(imageData, amount) → { imageData }
 ├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
 ├── colorMix.js                    # averageColor, mixPaints (KM), rgbToLab, deltaE, matchColor
 ├── underpaintingAlignment.js      # Pure: homography, warp, working-size, quad validation
 ├── viewTransforms.js              # Pure: flipHorizontal, toGrayscale, boxBlur
-├── posterizeTool.js               # Tool module: posterization UI
+├── posterizeTool.js               # Tool module: posterization UI + band isolation
 ├── sketchTool.js                  # Tool module: edge detection / sketch UI
 ├── gridTool.js                    # Tool module: grid overlay UI
 ├── lightenTool.js                 # Tool module: lighten UI
@@ -159,6 +170,8 @@ painting-tools/
 │       └── 015-palette-extraction-paint-recipes.md
 └── tests/
     ├── posterize.test.js
+    ├── histogram.test.js
+    ├── isolateBand.test.js
     ├── edgeDetect.test.js
     ├── gridOverlay.test.js
     ├── lighten.test.js

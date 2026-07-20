@@ -69,9 +69,19 @@ or paint.
 - Side-by-side comparison of original vs lightened
 - Download the lightened image at original resolution as PNG
 
-### F8: Layer Isolation (Stretch Goal)
+### F8: Layer Isolation
 For a given `N`, show ONLY the shapes that belong to a specific value band.
-Useful for tracing or studying individual value masses.
+- Click a histogram bin to show only the pixels in that value band as a
+  black-on-white mask (selected band → black, all others → white, alpha
+  preserved).
+- Available in both grayscale and color posterization modes.
+- Clicking the same bin again, clicking the "All Bands" button, or clicking
+  outside the chart area returns to the normal posterized view.
+- Changing N or mode clears the selection.
+- The selected band persists across reloads via localStorage.
+- Download and "Use as New Reference" export the isolated mask while a band
+  is selected.
+- Useful for tracing or studying individual value masses.
 
 ### F9: Promote Output to Reference Image
 Posterize, Sketch, Grid, Lighten, and View can each promote their output to become
