@@ -125,6 +125,18 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
     posterized view. The histogram highlights the selected bin in the accent
     color.
 
+13. **Crop tool uses Canvas 2D compositing overlay, not pixel manipulation,
+    for the crop rect, dimmed exterior, rule-of-thirds lines, and corner
+    handles.** The source ImageData is drawn first, then the dimming and
+    overlay shapes are composited on top. The actual crop is a pure pixel
+    cut via `cropImageData()` at full resolution with no resampling.
+    Pointer coordinates are mapped from CSS space to image-pixel space
+    using the canvas backing vs. CSS size ratio (same pattern as the
+    underpainting tool). Presets persist in localStorage as
+    `painting-tools.crop.preset` (string) and
+    `painting-tools.crop.landscape` (bool). Crop is the first tab since
+    it's typically the first decision in a painting workflow.
+
 ## File Structure
 
 ```
@@ -139,6 +151,7 @@ painting-tools/
 ├── lighten.js          # lighten(imageData, amount) → { imageData }
 ├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
 ├── colorMix.js                    # averageColor, mixPaints (KM), rgbToLab, deltaE, matchColor
+├── crop.js                        # Pure: largestRectForAspect, clampRect, resizeRect, cropImageData
 ├── underpaintingAlignment.js      # Pure: homography, warp, working-size, quad validation
 ├── viewTransforms.js              # Pure: flipHorizontal, toGrayscale, boxBlur
 ├── posterizeTool.js               # Tool module: posterization UI + band isolation
@@ -146,6 +159,7 @@ painting-tools/
 ├── gridTool.js                    # Tool module: grid overlay UI
 ├── lightenTool.js                 # Tool module: lighten UI
 ├── viewTool.js                    # Tool module: View tool (flip/grayscale/blur) UI
+├── cropTool.js                    # Tool module: crop UI (rect drag/resize, preset selection, apply)
 ├── colorTool.js                   # Tool module: color mixer (sample + recipe + palette)
 ├── underpaintingAccuracyTool.js   # Tool: marking magnifier, homography overlay, zoom/pan
 ├── docs/
@@ -179,7 +193,8 @@ painting-tools/
     ├── settings.test.js
     ├── underpaintingAlignment.test.js
     ├── underpaintingAccuracyTool.test.js
-    └── viewTransforms.test.js
+    ├── viewTransforms.test.js
+    └── crop.test.js
 ```
 
 ## When Adding Features
