@@ -357,9 +357,6 @@ function checkerboard1px(w, h) {
 
   for (const mode of ['grayscale', 'color']) {
     const blurred = boxBlur(checker, 2, 2);
-    const postResult = posterize(blurred, N, mode);
-    const postData = postResult.imageData.data;
-
     // Isolate each band and verify per-pixel consistency
     for (let band = 0; band < N; band++) {
       const isolated = require('../posterize.js').isolateBand(blurred, N, band, mode);
@@ -388,15 +385,20 @@ function checkerboard1px(w, h) {
         'isolateBand on smoothed input: band ' + band + ' per-pixel consistent (' + mode + ')');
     }
 
-    // Also verify alpha is preserved
-    for (let band2 = 0; band2 < N; band2++) {
-      const isolated2 = require('../posterize.js').isolateBand(blurred, N, band2, mode);
-      for (let i = 0; i < blurred.data.length; i += 4) {
-        if (isolated2.imageData.data[i + 3] !== blurred.data[i + 3]) {
-          assert(false, 'isolateBand alpha preserved (' + mode + ', band ' + band2 + ')');
-          break;
+    // Also verify alpha is preserved (positive assertion per mode)
+    {
+      let alphaOK = true;
+      for (let band2 = 0; band2 < N; band2++) {
+        const isolated2 = require('../posterize.js').isolateBand(blurred, N, band2, mode);
+        for (let i = 0; i < blurred.data.length; i += 4) {
+          if (isolated2.imageData.data[i + 3] !== blurred.data[i + 3]) {
+            alphaOK = false;
+            break;
+          }
         }
+        if (!alphaOK) break;
       }
+      assert(alphaOK, 'isolateBand alpha preserved for all bands (' + mode + ')');
     }
   }
 }

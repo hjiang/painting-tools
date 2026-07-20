@@ -68,10 +68,11 @@ ToolShell.register({
       valueLabel.textContent = N;
       if (smoothLabel) smoothLabel.textContent = String(smooth);
 
-      // Invalidate cache when image, N, mode, or smooth radius changes
-      if (imageData !== _lastImageData || N !== _lastN || mode !== _lastMode || smooth !== _lastSmooth) {
-        // Compute the smoothed source (or use raw when smooth=0)
-        var source;
+      // Phase 1: recompute smoothed source only when raw image or smooth radius changes.
+      // N/mode-only changes skip boxBlur entirely.
+      var sourceNeedsUpdate = (imageData !== _lastImageData || smooth !== _lastSmooth);
+      var source;
+      if (sourceNeedsUpdate) {
         if (smooth > 0) {
           _lastSmoothedSource = boxBlur(imageData, smooth, 2);
           source = _lastSmoothedSource;
@@ -79,12 +80,18 @@ ToolShell.register({
           _lastSmoothedSource = null;
           source = imageData;
         }
-
-        _lastResult = posterize(source, N, mode);
         _lastImageData = imageData;
+        _lastSmooth = smooth;
+      } else {
+        source = _lastSmoothedSource || imageData;
+      }
+
+      // Phase 2: recompute posterize result when source, N, or mode changes.
+      // boxBlur is NOT called again for N/mode-only changes.
+      if (sourceNeedsUpdate || N !== _lastN || mode !== _lastMode) {
+        _lastResult = posterize(source, N, mode);
         _lastN = N;
         _lastMode = mode;
-        _lastSmooth = smooth;
       }
 
       drawImageDataToCanvas(imageData, originalCanvas);
