@@ -2,6 +2,7 @@
 // Tool module for value posterization. Registers with ToolShell.
 // Depends on: posterize.js, histogram.js (pure functions)
 //             app.js (ImageManager, ToolShell, canvas helpers)
+//             viewTransforms.js (boxBlur for smoothing)
 
 ToolShell.register({
   id: 'posterize',
@@ -18,12 +19,22 @@ ToolShell.register({
     var histogramCanvas = document.getElementById('histogram-canvas');
     var allBandsBtn = document.getElementById('all-bands-btn');
     var isolateHint = document.getElementById('isolate-hint');
+    var smoothSlider = document.getElementById('posterize-smooth');
+    var smoothLabel = document.getElementById('posterize-smooth-label');
 
     var _lastResult = null;
     var _lastImageData = null;
     var _lastN = -1;
     var _lastMode = '';
+    var _lastSmooth = -1;           // smoothing radius used for last cache
+    var _lastSmoothedSource = null; // cached smoothed ImageData (null when smooth=0)
     var _selectedBin = Settings.getInt('painting-tools.posterize.isolateBand', -1);
+
+    // ── Restore persisted smoothing value ─────────
+
+    if (smoothSlider) {
+      smoothSlider.value = String(Settings.getInt('painting-tools.posterize.smooth', 0));
+    }
 
     function getN() {
       return parseInt(valueSlider.value, 10);
@@ -31,6 +42,10 @@ ToolShell.register({
 
     function getMode() {
       return getCheckedValue(modeRadios, 'grayscale');
+    }
+
+    function getSmooth() {
+      return smoothSlider ? parseInt(smoothSlider.value, 10) : 0;
     }
 
     function updateAllBandsButton() {
@@ -49,20 +64,38 @@ ToolShell.register({
 
       var N = getN();
       var mode = getMode();
+      var smooth = getSmooth();
       valueLabel.textContent = N;
+      if (smoothLabel) smoothLabel.textContent = String(smooth);
 
-      if (imageData !== _lastImageData || N !== _lastN || mode !== _lastMode) {
-        _lastResult = posterize(imageData, N, mode);
+      // Invalidate cache when image, N, mode, or smooth radius changes
+      if (imageData !== _lastImageData || N !== _lastN || mode !== _lastMode || smooth !== _lastSmooth) {
+        // Compute the smoothed source (or use raw when smooth=0)
+        var source;
+        if (smooth > 0) {
+          _lastSmoothedSource = boxBlur(imageData, smooth, 2);
+          source = _lastSmoothedSource;
+        } else {
+          _lastSmoothedSource = null;
+          source = imageData;
+        }
+
+        _lastResult = posterize(source, N, mode);
         _lastImageData = imageData;
         _lastN = N;
         _lastMode = mode;
+        _lastSmooth = smooth;
       }
 
       drawImageDataToCanvas(imageData, originalCanvas);
 
+      // Determine the source to use for isolation — must match the
+      // same (optionally smoothed) input that posterize consumed
+      var sourceForIsolation = _lastSmoothedSource || imageData;
+
       if (_selectedBin >= 0 && _selectedBin < N) {
         // Show isolated band mask
-        var isolated = isolateBand(imageData, N, _selectedBin, mode);
+        var isolated = isolateBand(sourceForIsolation, N, _selectedBin, mode);
         drawImageDataToCanvas(isolated.imageData, resultCanvas);
         drawHistogram(histogramCanvas, _lastResult.histogram, N, { selectedBin: _selectedBin });
       } else {
@@ -86,6 +119,19 @@ ToolShell.register({
         // Changing mode clears selection
         _selectedBin = -1;
         Settings.set('painting-tools.posterize.isolateBand', -1);
+        render();
+      });
+    }
+
+    // ── Smoothing slider: update label, persist, re-render ──
+    // Does NOT clear the isolated band selection — the mask is
+    // recomputed coherently from the new smoothed source.
+
+    if (smoothSlider) {
+      smoothSlider.addEventListener('input', function () {
+        var v = parseInt(smoothSlider.value, 10);
+        if (smoothLabel) smoothLabel.textContent = String(v);
+        Settings.set('painting-tools.posterize.smooth', v);
         render();
       });
     }
@@ -130,33 +176,44 @@ ToolShell.register({
 
     // ── Promote button ─────────────────────────
 
+    function getSmoothSuffix() {
+      var s = getSmooth();
+      return s > 0 ? ', smoothed ' + s + 'px' : '';
+    }
+
     var promoteBtn = createPromoteButton(
       function () {
         if (!_lastResult) return null;
+        var imageData = ImageManager.getImageData();
+        if (!imageData) return null;
+        var smooth = getSmooth();
+        var source = (smooth > 0 && _lastSmoothedSource) ? _lastSmoothedSource : imageData;
+
         if (_selectedBin >= 0 && _selectedBin < getN()) {
-          var imageData = ImageManager.getImageData();
-          if (!imageData) return null;
-          var isolated = isolateBand(imageData, getN(), _selectedBin, getMode());
+          var isolated = isolateBand(source, getN(), _selectedBin, getMode());
           return isolated.imageData;
         }
         return _lastResult.imageData;
       },
       function () {
+        var suffix = getSmoothSuffix();
         if (_selectedBin >= 0 && _selectedBin < getN()) {
-          return 'Isolated band ' + (_selectedBin + 1) + ' (' + getN() + ' values)';
+          return 'Isolated band ' + (_selectedBin + 1) + ' (' + getN() + ' values)' + suffix;
         }
-        return 'Posterized (' + getN() + ' values, ' + getMode() + ')';
+        return 'Posterized (' + getN() + ' values, ' + getMode() + ')' + suffix;
       }
     );
     document.getElementById('posterize-promote-spot').appendChild(promoteBtn);
 
     downloadBtn.addEventListener('click', function () {
       var result = null;
+      var imageData = ImageManager.getImageData();
+      if (!imageData) return;
+      var smooth = getSmooth();
+      var source = (smooth > 0 && _lastSmoothedSource) ? _lastSmoothedSource : imageData;
+
       if (_selectedBin >= 0 && _selectedBin < getN()) {
-        var imageData = ImageManager.getImageData();
-        if (imageData) {
-          result = isolateBand(imageData, getN(), _selectedBin, getMode()).imageData;
-        }
+        result = isolateBand(source, getN(), _selectedBin, getMode()).imageData;
       } else if (_lastResult) {
         result = _lastResult.imageData;
       }

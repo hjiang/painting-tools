@@ -131,6 +131,12 @@ gets the **midpoint** value of its range, preserving overall brightness balance.
 
 Example for N=3: bands are [0–85), [85–170), [170–255] → outputs 42, 127, 212.
 
+**Optional smoothing pre-pass:** Before posterization, a Simplify slider (0–8 px)
+applies `boxBlur(imageData, radius, 2)` when radius > 0. The same smoothed source
+is used for posterization, histogram, band isolation, promote, and download.
+`boxBlur` is reused from `viewTransforms.js` — no duplication. Radius 0 skips the
+pass entirely, preserving the original pixel-exact path.
+
 #### Grayscale Mode
 - Convert RGB to luminance: `L = 0.299*R + 0.587*G + 0.114*B`
 - Quantize L to N bands → set R=G=B=quantized_L
@@ -327,7 +333,7 @@ painting-tools/
 | `histogram.js` | `drawHistogram(canvas, bins, N, opts?)`, `binAtX(cssX, canvasCssWidth, N) → number`, `HIST_PAD` | Renders histogram bars on a given canvas. Optional `opts.selectedBin` draws that bar in the accent color. `binAtX` converts a CSS x-coordinate to a bin index for hit-testing (uses the same padding constants as drawing). `HIST_PAD` exported for unit test alignment. |
 | `crop.js` | `largestRectForAspect(imgW, imgH, aspectW, aspectH) → rect`, `clampRect(rect, imgW, imgH, minSize) → rect`, `resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) → rect`, `cropImageData(imageData, rect) → ImageData` | Pure functions. `largestRectForAspect` computes a centered maximal rectangle of the given aspect inside the image bounds. `clampRect` enforces position and size constraints. `resizeRect` adjusts a corner handle while optionally preserving aspect ratio. `cropImageData` produces a new ImageData from a pixel-accurate rect cut of the source. |
 | `underpaintingAlignment.js` | `computeWorkingSize`, `resizeImageData`, `validateCornerQuad`, `solveHomography`, `mapHomographyPoint`, `warpPerspective` | Pure geometry. Working-size caps, bilinear resize with premultiplied alpha, quadrilateral validation, 8×8 DLT homography solver with normalized partial pivoting, and inverse-mapping perspective warp. |
-| `posterizeTool.js` | Tool module: registers posterization UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires slider, mode radios, histogram with click-to-isolate (via `binAtX`), "All Bands" button, and download. Persists selected band via `Settings`. |
+| `posterizeTool.js` | Tool module: registers posterization UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires slider, mode radios, Simplify (blur) slider, histogram with click-to-isolate (via `binAtX`), "All Bands" button, and download. Applies `boxBlur` smoothing pre-pass when Simplify > 0. Persists selected band and smooth radius via `Settings`. |
 | `gridTool.js` | Tool module: registers grid overlay UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires rows/cols sliders (with square-cell auto-sync), line color, width, style, labels, diagonals, square cells toggle, and download. |
 | `sketchTool.js` | Tool module: registers sketch UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires threshold slider, invert checkbox, and download. |
 | `lightenTool.js` | Tool module: registers lighten UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires amount slider (0–100%), side-by-side canvases, and download. |

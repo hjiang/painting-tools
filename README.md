@@ -10,7 +10,7 @@ output promotion; Color Mixer and Underpainting Check are visual-only and do not
 
 | Tab | What It Does |
 |-----|-------------|
-| **Posterize** | Reduce the photo to N value levels (2–12), grayscale or color; click a histogram bin to isolate that value band |
+| **Posterize** | Reduce the photo to N value levels (2–12), grayscale or color; click a histogram bin to isolate that value band. Optional Simplify (blur) slider smooths noisy photos before posterization |
 | **Sketch** | Canny edge detection → line drawing with adjustable threshold |
 | **Grid** | Overlay a configurable grid (square or fixed cells, with diagonals) |
 | **Lighten** | Blend toward white for printable reference images |
