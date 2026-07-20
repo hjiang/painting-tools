@@ -18,7 +18,7 @@ ToolShell.register({
     // ── State ──────────────────────────────────
     var _imageData = null;       // current source ImageData
     var _rect = null;            // { x, y, w, h } in image pixels
-    var _dragMode = null;        // 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'new'
+    var _dragMode = null;        // 'move' | 'nw' | 'ne' | 'sw' | 'se'
     var _dragStart = null;       // { mx, my, rect } — mouse coords at drag start
     var _preset = 'free';
     var _landscape = true;       // orientation flag
@@ -385,10 +385,11 @@ ToolShell.register({
     // ── Render function (called on image load and resize) ──
 
     function process(imageData) {
+      var dimsChanged = !_imageData || _imageData.width !== imageData.width || _imageData.height !== imageData.height;
       _imageData = imageData;
       // Restore saved state
       syncRadioUI();
-      initRect();
+      if (dimsChanged || !_rect) initRect();
       render();
       updateAspectLabel();
     }

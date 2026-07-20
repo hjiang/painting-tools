@@ -248,6 +248,40 @@ function assertClose(actual, expected, epsilon, message) {
   assertEqual(rect.y, 0, 'SW drag: y unchanged (NE corner anchored)');
 })();
 
+// NE handle: aspect-locked, drag increases w and decreases h
+(function testResizeNELocked() {
+  // Rect at (100, 100, 200, 200). SW corner at (100, 300).
+  // Drag NE right by 40 (+dx): w should increase, h follows aspect (1:1).
+  // Opposite corner is SW (100, 300).
+  var rect = resizeRect({ x: 100, y: 100, w: 200, h: 200 }, 'ne', 40, 0, { w: 1, h: 1 }, 400, 400);
+  assertEqual(rect.w, 240, 'NE drag +40dx with 1:1 → w = 240');
+  assertEqual(rect.h, 240, 'NE drag +40dx with 1:1 → h = 240 (locked)');
+  assertEqual(rect.x, 100, 'NE drag → x unchanged (SW corner anchored)');
+  assertEqual(rect.y, 60, 'NE drag → y = swY - h = 300 - 240 = 60');
+})();
+
+// NE handle: aspect-locked vertical drag (dy dominant)
+(function testResizeNELockedVertical() {
+  // Rect at (100, 100, 200, 200). SW corner at (100, 300).
+  // Drag NE down by +40 (+dy): h decreases, w should follow 1:1.
+  var rect = resizeRect({ x: 100, y: 100, w: 200, h: 200 }, 'ne', 0, 40, { w: 1, h: 1 }, 400, 400);
+  // From dy: h = 200 - 40 = 160, w = 160. From dx: w = 200 + 0 = 200.
+  // dy delta = |160 - 200| = 40, dx delta = |200 - 200| = 0. dy dominates.
+  assertEqual(rect.w, 160, 'NE drag +40dy with 1:1 → w = 160 (from dy)');
+  assertEqual(rect.h, 160, 'NE drag +40dy with 1:1 → h = 160');
+  assertEqual(rect.x, 100, 'NE drag +40dy → x unchanged');
+  assertEqual(rect.y, 140, 'NE drag +40dy → y = swY - h = 300 - 160 = 140');
+})();
+
+// NE handle: free mode changes both independently
+(function testResizeNEFree() {
+  var rect = resizeRect({ x: 100, y: 100, w: 200, h: 200 }, 'ne', 30, -20, null, 400, 400);
+  assertEqual(rect.w, 230, 'Free NE drag +30dx → w = 230');
+  assertEqual(rect.h, 220, 'Free NE drag -20dy → h = 220');
+  assertEqual(rect.x, 100, 'Free NE drag → x unchanged');
+  assertEqual(rect.y, 80, 'Free NE drag → y = 100 + (-20) = 80');
+})();
+
 // ── cropImageData ──────────────────────────────────────
 
 // Known 4×4 image cut to {1, 1, 2, 2} yields a 2×2 image

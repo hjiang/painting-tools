@@ -130,22 +130,26 @@ function resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) {
   var w = rect.w;
   var h = rect.h;
 
-  // Helper: clamp the resulting rect to bounds
-  function applyClamp(r) {
+  // Helper: produce a clamped copy of the rect (pure — does not mutate input)
+  function clampCopy(rect) {
+    var cx = rect.x;
+    var cy = rect.y;
+    var cw = rect.w;
+    var ch = rect.h;
     // Clamp min size first
-    if (r.w < 32) r.w = 32;
-    if (r.h < 32) r.h = 32;
+    if (cw < 32) cw = 32;
+    if (ch < 32) ch = 32;
     // Clamp to image bounds
-    if (r.x < 0) { r.w += r.x; r.x = 0; }
-    if (r.y < 0) { r.h += r.y; r.y = 0; }
-    if (r.x + r.w > imgW) { r.w = imgW - r.x; }
-    if (r.y + r.h > imgH) { r.h = imgH - r.y; }
+    if (cx < 0) { cw += cx; cx = 0; }
+    if (cy < 0) { ch += cy; cy = 0; }
+    if (cx + cw > imgW) { cw = imgW - cx; }
+    if (cy + ch > imgH) { ch = imgH - cy; }
     // Re-enforce min size after clamping
-    if (r.w < 32) r.w = 32;
-    if (r.h < 32) r.h = 32;
-    if (r.x + r.w > imgW) r.x = imgW - r.w;
-    if (r.y + r.h > imgH) r.y = imgH - r.h;
-    return r;
+    if (cw < 32) cw = 32;
+    if (ch < 32) ch = 32;
+    if (cx + cw > imgW) cx = imgW - cw;
+    if (cy + ch > imgH) cy = imgH - ch;
+    return { x: cx, y: cy, w: cw, h: ch };
   }
 
   switch (handle) {
@@ -154,8 +158,10 @@ function resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) {
       w = Math.max(1, rect.w + dx);
       h = Math.max(1, rect.h + dy);
       if (aspect) {
-        // Use dx to determine new size, then derive h from aspect
-        w = Math.max(32, rect.w + dx);
+        // Dominant axis: pick the dimension with larger change
+        var seWdx = Math.max(32, rect.w + dx);
+        var seWdy = Math.max(32, Math.round((rect.h + dy) * aspect.w / aspect.h));
+        w = Math.abs(seWdx - rect.w) >= Math.abs(seWdy - rect.w) ? seWdx : seWdy;
         h = Math.round(w * aspect.h / aspect.w);
       }
       break;
@@ -166,12 +172,15 @@ function resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) {
         // Opposite corner is NE (x + w, y). Anchor that.
         var neX = rect.x + rect.w;
         var neY = rect.y;
-        var newW = Math.max(32, rect.w - dx);
-        var newH = Math.round(newW * aspect.h / aspect.w);
-        x = neX - newW;
+        // Dominant axis
+        var swWdx = Math.max(32, rect.w - dx);
+        var swWdy = Math.max(32, Math.round((rect.h + dy) * aspect.w / aspect.h));
+        var swW = Math.abs(swWdx - rect.w) >= Math.abs(swWdy - rect.w) ? swWdx : swWdy;
+        var swH = Math.round(swW * aspect.h / aspect.w);
+        x = neX - swW;
         y = neY;
-        w = newW;
-        h = newH;
+        w = swW;
+        h = swH;
       } else {
         x = rect.x + dx;
         w = Math.max(1, rect.w - dx);
@@ -185,12 +194,15 @@ function resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) {
         // Opposite corner is SW (x, y + h)
         var swX = rect.x;
         var swY = rect.y + rect.h;
-        var newW2 = Math.max(32, rect.w + dx);
-        var newH2 = Math.round(newW2 * aspect.h / aspect.w);
+        // Dominant axis
+        var neWdx = Math.max(32, rect.w + dx);
+        var neWdy = Math.max(32, Math.round((rect.h - dy) * aspect.w / aspect.h));
+        var neW = Math.abs(neWdx - rect.w) >= Math.abs(neWdy - rect.w) ? neWdx : neWdy;
+        var neH = Math.round(neW * aspect.h / aspect.w);
         x = swX;
-        y = swY - newH2;
-        w = newW2;
-        h = newH2;
+        y = swY - neH;
+        w = neW;
+        h = neH;
       } else {
         y = rect.y + dy;
         w = Math.max(1, rect.w + dx);
@@ -204,12 +216,15 @@ function resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) {
         // Opposite corner is SE (x + w, y + h)
         var seX = rect.x + rect.w;
         var seY = rect.y + rect.h;
-        var newW3 = Math.max(32, rect.w - dx);
-        var newH3 = Math.round(newW3 * aspect.h / aspect.w);
-        x = seX - newW3;
-        y = seY - newH3;
-        w = newW3;
-        h = newH3;
+        // Dominant axis
+        var nwWdx = Math.max(32, rect.w - dx);
+        var nwWdy = Math.max(32, Math.round((rect.h - dy) * aspect.w / aspect.h));
+        var nwW = Math.abs(nwWdx - rect.w) >= Math.abs(nwWdy - rect.w) ? nwWdx : nwWdy;
+        var nwH = Math.round(nwW * aspect.h / aspect.w);
+        x = seX - nwW;
+        y = seY - nwH;
+        w = nwW;
+        h = nwH;
       } else {
         x = rect.x + dx;
         y = rect.y + dy;
@@ -219,7 +234,7 @@ function resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) {
       break;
   }
 
-  return applyClamp({ x: x, y: y, w: w, h: h });
+  return clampCopy({ x: x, y: y, w: w, h: h });
 }
 
 /**
@@ -243,10 +258,12 @@ function cropImageData(imageData, rect) {
   var h = Math.round(rect.h);
 
   // Clamp to image bounds just in case
-  x = Math.max(0, Math.min(x, srcW - 1));
-  y = Math.max(0, Math.min(y, srcH - 1));
+  x = Math.max(0, Math.min(x, srcW));
+  y = Math.max(0, Math.min(y, srcH));
   w = Math.max(1, Math.min(w, srcW - x));
   h = Math.max(1, Math.min(h, srcH - y));
+  if (x + w > srcW) { w = srcW - x; if (w < 1) { w = 1; x = srcW - 1; } }
+  if (y + h > srcH) { h = srcH - y; if (h < 1) { h = 1; y = srcH - 1; } }
 
   var outData = new Uint8ClampedArray(w * h * 4);
 
