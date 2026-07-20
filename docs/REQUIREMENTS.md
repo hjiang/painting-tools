@@ -147,6 +147,23 @@ pure-pixel transforms — display, download, and promote at full resolution.
 - Download the view result at original resolution as PNG
 - "Use as New Reference" enables chaining (e.g., flip then posterize)
 
+### F13: Crop Tool
+Crop the reference image to a standard canvas proportion for painting.
+- Aspect presets: Free, 1:1, 4:5 (8×10, 16×20), 3:4 (9×12, 18×24), 2:3 (20×30),
+  5:7, 11:14, golden ratio (1.618:1)
+- Rotate button swaps the preset's orientation (portrait ↔ landscape)
+- Drag inside the crop rect to move it; drag corner handles to resize it
+- With a preset, aspect is locked during resize; Free mode allows independent
+  corner adjustment
+- Minimum rect size: 32×32 image pixels; rect always clamped inside the image
+- Rule-of-thirds lines drawn inside the crop rect; area outside the rect is
+  dimmed
+- **Apply Crop** produces the cropped image at full resolution (pure pixel cut,
+  no resampling) and promotes it via `ImageManager.setImageData` so the
+  cropped version becomes the new reference for all other tools
+- Selected preset persists across reloads via `localStorage`
+- Download the cropped image at original resolution as PNG
+
 ### F11: Color Mixer / Paint Recipe
 Sample a color from the photo and show how to mix it from a paint palette.
 - Click the image to sample the **average color** of pixels inside a small

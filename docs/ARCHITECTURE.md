@@ -272,6 +272,7 @@ painting-tools/
 ├── histogram.js                     # Pure function: histogram rendering
 ├── gridOverlay.js                   # Pure function: grid math + Canvas 2D drawing
 ├── colorMix.js                      # Pure: KM subtractive mixing, CIELAB ΔE, recipe solver
+├── crop.js                          # Pure: crop rect math (largestRectForAspect, clampRect, resizeRect, cropImageData)
 ├── underpaintingAlignment.js        # Pure: working-size caps, homography, warp, quad validation
 ├── viewTransforms.js                # Pure: flipHorizontal, toGrayscale, boxBlur
 ├── posterizeTool.js                 # Tool module: posterization UI wiring
@@ -279,6 +280,7 @@ painting-tools/
 ├── gridTool.js                      # Tool module: grid overlay UI wiring
 ├── lightenTool.js                   # Tool module: lighten UI wiring
 ├── viewTool.js                      # Tool module: flip/grayscale/blur View UI
+├── cropTool.js                      # Tool module: crop UI (rect drag/resize, preset selection, apply)
 ├── colorTool.js                     # Tool module: color sampling + recipe + palette editor
 ├── underpaintingAccuracyTool.js     # Tool module: upload, marking, homography overlay
 ├── docs/
@@ -323,6 +325,7 @@ painting-tools/
 | `lighten.js` | `lighten(imageData, amount) → { imageData }` | Pure function. Blends each pixel toward white by a percentage (0–100%). 0% = no change, 100% = pure white. Alpha preserved. |
 | `colorMix.js` | `averageColor`, `mixPaints` (Kubelka-Munk), `rgbToLab`, `deltaE`, `matchColor`, `DEFAULT_PALETTE` | Pure functions. Subtractive paint mixing in reflectance space + CIELAB ΔE recipe matching against a configurable palette. |
 | `histogram.js` | `drawHistogram(canvas, bins, N, opts?)`, `binAtX(cssX, canvasCssWidth, N) → number`, `HIST_PAD` | Renders histogram bars on a given canvas. Optional `opts.selectedBin` draws that bar in the accent color. `binAtX` converts a CSS x-coordinate to a bin index for hit-testing (uses the same padding constants as drawing). `HIST_PAD` exported for unit test alignment. |
+| `crop.js` | `largestRectForAspect(imgW, imgH, aspectW, aspectH) → rect`, `clampRect(rect, imgW, imgH, minSize) → rect`, `resizeRect(rect, handle, dx, dy, aspect, imgW, imgH) → rect`, `cropImageData(imageData, rect) → ImageData` | Pure functions. `largestRectForAspect` computes a centered maximal rectangle of the given aspect inside the image bounds. `clampRect` enforces position and size constraints. `resizeRect` adjusts a corner handle while optionally preserving aspect ratio. `cropImageData` produces a new ImageData from a pixel-accurate rect cut of the source. |
 | `underpaintingAlignment.js` | `computeWorkingSize`, `resizeImageData`, `validateCornerQuad`, `solveHomography`, `mapHomographyPoint`, `warpPerspective` | Pure geometry. Working-size caps, bilinear resize with premultiplied alpha, quadrilateral validation, 8×8 DLT homography solver with normalized partial pivoting, and inverse-mapping perspective warp. |
 | `posterizeTool.js` | Tool module: registers posterization UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires slider, mode radios, histogram with click-to-isolate (via `binAtX`), "All Bands" button, and download. Persists selected band via `Settings`. |
 | `gridTool.js` | Tool module: registers grid overlay UI with `ToolShell` | Calls `ToolShell.register({...})` with mount/process. Wires rows/cols sliders (with square-cell auto-sync), line color, width, style, labels, diagonals, square cells toggle, and download. |
@@ -364,16 +367,16 @@ consumers, and `app.js` before any tool module that calls
 `ToolShell.register()`:
 
 1. Pure function modules: `posterize.js`, `histogram.js`, `edgeDetect.js`,
-   `lighten.js`, `gridOverlay.js`, `colorMix.js`, `underpaintingAlignment.js`,
-   `viewTransforms.js`
+   `lighten.js`, `gridOverlay.js`, `colorMix.js`, `crop.js`,
+   `underpaintingAlignment.js`, `viewTransforms.js`
 2. `settings.js`
 3. `app.js` (defines `ImageManager`, `ToolShell`, helpers)
-4. Tool modules in any order: `viewTool.js`, `posterizeTool.js`, `sketchTool.js`,
-   `gridTool.js`, `colorTool.js`, `lightenTool.js`,
+4. Tool modules in any order: `cropTool.js`, `viewTool.js`, `posterizeTool.js`,
+   `sketchTool.js`, `gridTool.js`, `colorTool.js`, `lightenTool.js`,
    `underpaintingAccuracyTool.js`
 
 Tab order follows `ToolShell.register()` call order = script tag order.
-`viewTool.js` is loaded first among tools so View is the first tab.
+`cropTool.js` is loaded first among tools so Crop is the first tab.
 
 ## Testing Strategy
 
