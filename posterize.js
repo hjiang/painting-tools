@@ -56,6 +56,47 @@ function hslToRgb(h, s, l) {
   };
 }
 
+// ── Band Index Helpers ─────────────────────────────────────
+
+/**
+ * Compute the value band index for a 0–255 value.
+ * Uses equal-interval bands: band = floor(v / (256/N)), clamped to [0, N-1].
+ *
+ * @param {number} v255 - Value in [0, 255] (values > 255 are clamped to N-1).
+ * @param {number} N - Number of bands (1–12).
+ * @returns {number} Band index in [0, N-1].
+ */
+function bandIndexForValue(v255, N) {
+  const bandWidth = 256 / N;
+  return Math.min(Math.floor(v255 / bandWidth), N - 1);
+}
+
+/**
+ * Compute the posterization band index for a single pixel.
+ * The band assignment is identical to posterize() for the given mode:
+ *   - 'grayscale': Rec. 601 luminance → bandIndexForValue
+ *   - 'color':     HSL L (×255) → bandIndexForValue
+ *
+ * @param {number} r - Red channel (0–255).
+ * @param {number} g - Green channel (0–255).
+ * @param {number} b - Blue channel (0–255).
+ * @param {number} N - Number of bands (1–12).
+ * @param {'grayscale'|'color'} mode
+ * @returns {number} Band index in [0, N-1].
+ */
+function bandIndexForPixel(r, g, b, N, mode) {
+  let v255;
+
+  if (mode === 'color') {
+    const hsl = rgbToHsl(r, g, b);
+    v255 = hsl.l * 255;
+  } else {
+    v255 = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+  }
+
+  return bandIndexForValue(v255, N);
+}
+
 // ── Posterization ─────────────────────────────────────────
 
 /**
@@ -86,7 +127,7 @@ function posterize(imageData, N, mode) {
       // RGB → HSL, quantize lightness, HSL → RGB
       const hsl = rgbToHsl(r, g, b);
       const L255 = hsl.l * 255;
-      bandIdx = Math.min(Math.floor(L255 / bandWidth), N - 1);
+      bandIdx = bandIndexForValue(L255, N);
       const newL = (bandIdx * bandWidth + bandWidth / 2) / 255;
       const rgb = hslToRgb(hsl.h, hsl.s, newL);
       outR = rgb.r;
@@ -96,7 +137,7 @@ function posterize(imageData, N, mode) {
       // Grayscale: luminance → quantize → R=G=B
       // Math.round fixes floating-point: 0.299+0.587+0.114 ≈ 0.99999 in IEEE 754
       const lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-      bandIdx = Math.min(Math.floor(lum / bandWidth), N - 1);
+      bandIdx = bandIndexForValue(lum, N);
       const val = Math.round(bandIdx * bandWidth + bandWidth / 2);
       outR = outG = outB = val;
     }
@@ -115,8 +156,52 @@ function posterize(imageData, N, mode) {
   };
 }
 
+// ── Value Band Isolation ──────────────────────────────────
+
+/**
+ * Produce a mask showing only the pixels belonging to a single value band.
+ * Selected band pixels → black (#000), all other pixels → white (#fff),
+ * alpha preserved.
+ *
+ * @param {ImageData} imageData - Source image pixels (RGBA).
+ * @param {number} N - Number of bands (2–12).
+ * @param {number} bandIndex - Which band to isolate (0 ≤ bandIndex < N).
+ * @param {'grayscale'|'color'} mode - Same band assignment as posterize().
+ * @returns {{ imageData: ImageData }}
+ */
+function isolateBand(imageData, N, bandIndex, mode) {
+  const { data, width, height } = imageData;
+  const out = new Uint8ClampedArray(data.length);
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+
+    const idx = bandIndexForPixel(r, g, b, N, mode);
+
+    if (idx === bandIndex) {
+      // Selected band → black
+      out[i] = 0;
+      out[i + 1] = 0;
+      out[i + 2] = 0;
+    } else {
+      // All others → white
+      out[i] = 255;
+      out[i + 1] = 255;
+      out[i + 2] = 255;
+    }
+    out[i + 3] = a; // alpha preserved
+  }
+
+  return {
+    imageData: new ImageData(out, width, height),
+  };
+}
+
 // ── Exports ───────────────────────────────────────────────
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { posterize, rgbToHsl, hslToRgb };
+  module.exports = { posterize, rgbToHsl, hslToRgb, bandIndexForValue, bandIndexForPixel, isolateBand };
 }
