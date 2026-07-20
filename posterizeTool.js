@@ -20,6 +20,9 @@ ToolShell.register({
     var isolateHint = document.getElementById('isolate-hint');
 
     var _lastResult = null;
+    var _lastImageData = null;
+    var _lastN = -1;
+    var _lastMode = '';
     var _selectedBin = Settings.getInt('painting-tools.posterize.isolateBand', -1);
 
     function getN() {
@@ -31,7 +34,7 @@ ToolShell.register({
     }
 
     function updateAllBandsButton() {
-      if (_selectedBin >= 0) {
+      if (_selectedBin >= 0 && _selectedBin < getN()) {
         if (allBandsBtn) allBandsBtn.classList.remove('hidden');
         if (isolateHint) isolateHint.classList.add('hidden');
       } else {
@@ -48,7 +51,12 @@ ToolShell.register({
       var mode = getMode();
       valueLabel.textContent = N;
 
-      _lastResult = posterize(imageData, N, mode);
+      if (imageData !== _lastImageData || N !== _lastN || mode !== _lastMode) {
+        _lastResult = posterize(imageData, N, mode);
+        _lastImageData = imageData;
+        _lastN = N;
+        _lastMode = mode;
+      }
 
       drawImageDataToCanvas(imageData, originalCanvas);
 
@@ -89,8 +97,10 @@ ToolShell.register({
       if (!imageData) return;
 
       var N = getN();
+      // Scale CSS offset to canvas-pixel space for hit-test alignment
       var cssW = histogramCanvas.clientWidth || histogramCanvas.width;
-      var bin = binAtX(e.offsetX, cssW, N);
+      var canvasW = histogramCanvas.width;
+      var bin = binAtX(e.offsetX * (canvasW / cssW), canvasW, N);
 
       if (bin >= 0) {
         if (_selectedBin === bin) {

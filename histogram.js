@@ -68,11 +68,17 @@ function drawHistogram(canvas, bins, N, opts) {
 }
 
 /**
- * Given a CSS x-coordinate (relative to the canvas element's left edge),
- * determine which histogram bin was clicked.
+ * Given an x-coordinate in canvas-pixel space, determine which histogram bin
+ * was clicked. Use canvas-pixel coordinates (e.g., canvas.width, not CSS
+ * clientWidth) to align with drawHistogram's coordinate system.
  *
- * @param {number} cssX - X coordinate in CSS pixels (e.g., event.offsetX).
- * @param {number} canvasCssWidth - CSS width of the histogram canvas element.
+ * When the canvas is CSS-scaled (e.g., max-width: 100%), convert the click's
+ * CSS offset to canvas pixels before calling: canvasX = event.offsetX *
+ * (canvas.width / canvas.clientWidth).
+ *
+ * @param {number} cssX - X coordinate in canvas-pixel space.
+ * @param {number} canvasCssWidth - Width of the canvas in the same pixel
+ *   space as cssX (typically canvas.width).
  * @param {number} N - Number of histogram bins.
  * @returns {number} Bin index (0–N-1) or -1 if outside the chart area.
  */
