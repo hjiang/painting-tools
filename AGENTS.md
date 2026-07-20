@@ -32,6 +32,11 @@ the Canvas API. Open `index.html` in a browser — it works offline.
   pattern.
 - CSS uses dark theme (`#1a1a2e` background) with responsive breakpoint at
   700px.
+- A slider with tick labels must wrap both in `<div class="slider-stack">`
+  (slider above `.slider-ticks`). Bare `.slider-ticks` uses a fixed
+  `margin-left` that only aligns when the control label is exactly 4rem wide
+  and the slider has an explicit 400px width rule — newer/wider labels break
+  it silently.
 
 ## Running Tests
 
@@ -102,6 +107,13 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
     up to 960 CSS pixels and zooms 50–400% by resizing the common CSS stage, not
     either canvas backing. Zoom, pan, and opacity must never rerun the warp.
 
+11. **View tool: display-only flip/grayscale/blur pipeline of pure pixel
+    functions.** All three transforms operate on ImageData at full resolution
+    (no CSS filters), so the result can be downloaded or promoted. Pipeline
+    order is fixed: flip → grayscale → blur. Controls persist via
+    localStorage. The View tool is the first tab and the landing tool after
+    image upload.
+
 ## File Structure
 
 ```
@@ -117,15 +129,18 @@ painting-tools/
 ├── gridOverlay.js      # computeGridLayout(w,h,opts), drawGrid(ctx,w,h,opts)
 ├── colorMix.js                    # averageColor, mixPaints (KM), rgbToLab, deltaE, matchColor
 ├── underpaintingAlignment.js      # Pure: homography, warp, working-size, quad validation
+├── viewTransforms.js              # Pure: flipHorizontal, toGrayscale, boxBlur
 ├── posterizeTool.js               # Tool module: posterization UI
 ├── sketchTool.js                  # Tool module: edge detection / sketch UI
 ├── gridTool.js                    # Tool module: grid overlay UI
 ├── lightenTool.js                 # Tool module: lighten UI
+├── viewTool.js                    # Tool module: View tool (flip/grayscale/blur) UI
 ├── colorTool.js                   # Tool module: color mixer (sample + recipe + palette)
 ├── underpaintingAccuracyTool.js   # Tool: marking magnifier, homography overlay, zoom/pan
 ├── docs/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
+│   ├── IDEAS.md            # Enhancement backlog (unscheduled ideas + links to plans)
 │   └── plans/
 │       ├── 001-initial-mvp.md
 │       ├── 002-edge-detection-sketch.md
@@ -136,7 +151,12 @@ painting-tools/
 │       ├── 007-color-mixer-accuracy.md
 │       ├── 008-grid-cell-cross-diagonals.md
 │       ├── 009-underpainting-accuracy.md
-│       └── 010-underpainting-magnifier-and-zoom.md
+│       ├── 010-underpainting-magnifier-and-zoom.md
+│       ├── 011-flip-squint-view-tool.md
+│       ├── 012-value-isolation.md
+│       ├── 013-crop-to-canvas-aspect.md
+│       ├── 014-simplify-before-posterize.md
+│       └── 015-palette-extraction-paint-recipes.md
 └── tests/
     ├── posterize.test.js
     ├── edgeDetect.test.js
@@ -145,7 +165,8 @@ painting-tools/
     ├── colorMix.test.js
     ├── settings.test.js
     ├── underpaintingAlignment.test.js
-    └── underpaintingAccuracyTool.test.js
+    ├── underpaintingAccuracyTool.test.js
+    └── viewTransforms.test.js
 ```
 
 ## When Adding Features

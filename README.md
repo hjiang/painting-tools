@@ -3,7 +3,7 @@
 A multi-tool reference photo prep app for painters — posterize to value levels,
 detect edges for sketching, overlay grids, lighten for printing, mix colors
 with subtractive (Kubelka-Munk) blending, and check underpainting alignment
-via projective rectification. Posterize, Sketch, Grid, and Lighten can be chained via
+via projective rectification, and flip/desaturate/blur the reference for easy value-judgment. Posterize, Sketch, Grid, Lighten, and View can be chained via
 output promotion; Color Mixer and Underpainting Check are visual-only and do not promote.
 
 ## Tools
@@ -14,6 +14,7 @@ output promotion; Color Mixer and Underpainting Check are visual-only and do not
 | **Sketch** | Canny edge detection → line drawing with adjustable threshold |
 | **Grid** | Overlay a configurable grid (square or fixed cells, with diagonals) |
 | **Lighten** | Blend toward white for printable reference images |
+| **View** | Flip, grayscale, or blur (squint) the reference to judge values. Display, download, and promote at full resolution |
 | **Color Mixer** | Click-sample a color → subtractive paint recipe with ΔE matching |
 | **Underpainting Check** | Mark photographed canvas corners with a drag magnifier, then inspect a centered projective comparison with opacity and 50–400% zoom/pan (visual-only, no promotion) |
 
@@ -41,10 +42,10 @@ value bands.
 
 1. Open `index.html` in any modern browser (Chrome, Firefox, Safari, Edge)
 2. Drop a photo or click to upload (JPG, PNG, WebP)
-3. Switch between tabs: **Posterize**, **Sketch**, **Grid**, **Lighten**, **Color Mixer**, **Underpainting Check**
+3. Switch between tabs: **View**, **Posterize**, **Sketch**, **Grid**, **Lighten**, **Color Mixer**, **Underpainting Check**
 4. Adjust each tool's controls to get the result you want
 5. Use **Use as New Reference** to chain image-processing tools together
-   (Posterize, Sketch, Grid, Lighten)
+   (Posterize, Sketch, Grid, Lighten, View)
 6. Use **Download** to save a processing tool's result at original resolution
    (where offered; Color Mixer and Underpainting Check have no download)
 
@@ -75,10 +76,12 @@ for t in tests/*.test.js; do node "$t"; done
 | `lighten.js` | Blend pixels toward white for printing |
 | `colorMix.js` | Subtractive (Kubelka-Munk) mixing, ΔE matching, palette |
 | `underpaintingAlignment.js` | Pure geometry: homography solving, bilinear warp, corner validation |
+| `viewTransforms.js` | Pure functions: flip, grayscale, box blur for View tool |
 | `posterizeTool.js` | Tool module: posterization UI |
 | `sketchTool.js` | Tool module: edge detection / sketch UI |
 | `gridTool.js` | Tool module: grid overlay UI |
 | `lightenTool.js` | Tool module: lighten UI |
+| `viewTool.js` | Tool module: View tool (flip/grayscale/blur) UI |
 | `colorTool.js` | Tool module: color mixer (sample + recipe + palette) |
 | `underpaintingAccuracyTool.js` | Tool module: upload, precision corner magnifier, projective alignment, opacity comparison, CSS-only zoom/pan |
 | `tests/posterize.test.js` | 40 unit tests |
@@ -89,6 +92,7 @@ for t in tests/*.test.js; do node "$t"; done
 | `tests/settings.test.js` | 20 unit tests |
 | `tests/underpaintingAlignment.test.js` | 337 unit tests |
 | `tests/underpaintingAccuracyTool.test.js` | 102 lifecycle assertions (mock-DOM VM suite, 22 named cases) |
+| `tests/viewTransforms.test.js` | 185 unit tests |
 
 See `AGENTS.md` for detailed architecture and conventions.
 

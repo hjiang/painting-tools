@@ -31,8 +31,8 @@ and tab switching, while each tool self-registers and owns its own UI + logic.
 │                            ▼                                     │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │              ToolShell (registry + tabs)                   │   │
-│  │  activate('posterize') activate('grid') activate('sketch')│   │
-│  │  activate('lighten') ...                                  │   │
+│  │  activate('view') activate('posterize') activate('grid')  │   │
+│  │  activate('sketch') activate('lighten') ...               │   │
 │  └────────┬──────────────┬──────────────┬──────────┬─────────┘   │
 │           │ mount/process│              │          │             │
 │           ▼              ▼              ▼          ▼             │
@@ -273,10 +273,12 @@ painting-tools/
 ├── gridOverlay.js                   # Pure function: grid math + Canvas 2D drawing
 ├── colorMix.js                      # Pure: KM subtractive mixing, CIELAB ΔE, recipe solver
 ├── underpaintingAlignment.js        # Pure: working-size caps, homography, warp, quad validation
+├── viewTransforms.js                # Pure: flipHorizontal, toGrayscale, boxBlur
 ├── posterizeTool.js                 # Tool module: posterization UI wiring
 ├── sketchTool.js                    # Tool module: edge detection UI wiring
 ├── gridTool.js                      # Tool module: grid overlay UI wiring
 ├── lightenTool.js                   # Tool module: lighten UI wiring
+├── viewTool.js                      # Tool module: flip/grayscale/blur View UI
 ├── colorTool.js                     # Tool module: color sampling + recipe + palette editor
 ├── underpaintingAccuracyTool.js     # Tool module: upload, marking, homography overlay
 ├── docs/
@@ -292,7 +294,12 @@ painting-tools/
 │       ├── 007-color-mixer-accuracy.md
 │       ├── 008-grid-cell-cross-diagonals.md
 │       ├── 009-underpainting-accuracy.md
-│       └── 010-underpainting-magnifier-and-zoom.md
+│       ├── 010-underpainting-magnifier-and-zoom.md
+│       ├── 011-flip-squint-view-tool.md
+│       ├── 012-value-isolation.md
+│       ├── 013-crop-to-canvas-aspect.md
+│       ├── 014-simplify-before-posterize.md
+│       └── 015-palette-extraction-paint-recipes.md
 └── tests/
     ├── posterize.test.js
     ├── edgeDetect.test.js
@@ -301,7 +308,8 @@ painting-tools/
     ├── colorMix.test.js
     ├── settings.test.js
     ├── underpaintingAlignment.test.js
-    └── underpaintingAccuracyTool.test.js
+    ├── underpaintingAccuracyTool.test.js
+    └── viewTransforms.test.js
 ```
 
 ### Key Modules
@@ -345,6 +353,10 @@ To add a new tool, you add:
 - A `<script src="myTool.js">` tag in `index.html` loaded in dependency order
 - Zero changes to `app.js` or existing tools, but `style.css` may need scoped styles
 
+The `app.js` landing-tab logic also changed: `ToolShell.activate('posterize')`
+became `ToolShell.activate('view')` in both the file-input and drop handlers,
+making View the first tool shown after upload.
+
 ### Script Load Order
 
 Script tags in `index.html` must load pure-function modules before their
@@ -352,18 +364,22 @@ consumers, and `app.js` before any tool module that calls
 `ToolShell.register()`:
 
 1. Pure function modules: `posterize.js`, `histogram.js`, `edgeDetect.js`,
-   `lighten.js`, `gridOverlay.js`, `colorMix.js`, `underpaintingAlignment.js`
+   `lighten.js`, `gridOverlay.js`, `colorMix.js`, `underpaintingAlignment.js`,
+   `viewTransforms.js`
 2. `settings.js`
 3. `app.js` (defines `ImageManager`, `ToolShell`, helpers)
-4. Tool modules in any order: `posterizeTool.js`, `sketchTool.js`,
+4. Tool modules in any order: `viewTool.js`, `posterizeTool.js`, `sketchTool.js`,
    `gridTool.js`, `colorTool.js`, `lightenTool.js`,
    `underpaintingAccuracyTool.js`
+
+Tab order follows `ToolShell.register()` call order = script tag order.
+`viewTool.js` is loaded first among tools so View is the first tab.
 
 ## Testing Strategy
 
 - **Unit tests for pure functions** (`posterize.test.js`, `edgeDetect.test.js`,
   `gridOverlay.test.js`, `lighten.test.js`, `colorMix.test.js`,
-  `underpaintingAlignment.test.js`): Test algorithm correctness with known
+  `underpaintingAlignment.test.js`, `viewTransforms.test.js`): Test algorithm correctness with known
   inputs and fixtures. Run with Node.js (no DOM required — `ImageData` is
   polyfilled for older Node versions).
 - **Unit tests for settings** (`settings.test.js`): Test localStorage
