@@ -78,6 +78,8 @@ function toGrayscale(imageData) {
  */
 function boxBlur(imageData, radius, iterations) {
   if (iterations === undefined) iterations = 2;
+  radius = Math.max(0, Math.round(radius)) || 0;
+  iterations = Math.max(1, Math.round(iterations)) || 1;
   if (radius <= 0) {
     // Return a copy (not the same reference)
     var copy = new Uint8ClampedArray(imageData.data.length);
@@ -88,50 +90,52 @@ function boxBlur(imageData, radius, iterations) {
   var w = imageData.width;
   var h = imageData.height;
   var srcData = imageData.data;
-  var floatBuffer = new Float32Array(srcData.length);
+  var pixelCount = w * h;
 
-  // Copy source into float buffer (for the first pass)
-  for (var i = 0; i < srcData.length; i++) {
-    floatBuffer[i] = srcData[i];
+  // Extract alpha — blur operates on RGB only, reducing scratch memory by 25%
+  var alpha = new Uint8ClampedArray(pixelCount);
+  for (var ai = 0; ai < pixelCount; ai++) {
+    alpha[ai] = srcData[ai * 4 + 3];
   }
 
-  // Temporary buffer for intermediate results between passes
-  var tmpBuffer = new Float32Array(srcData.length);
+  // Float buffers for RGB only (3 floats/pixel instead of 4)
+  var floatLen = pixelCount * 3;
+  var floatBuffer = new Float32Array(floatLen);
+  for (var pi = 0; pi < pixelCount; pi++) {
+    var srcOff = pi * 4;
+    var dstOff = pi * 3;
+    floatBuffer[dstOff] = srcData[srcOff];
+    floatBuffer[dstOff + 1] = srcData[srcOff + 1];
+    floatBuffer[dstOff + 2] = srcData[srcOff + 2];
+  }
+  var tmpBuffer = new Float32Array(floatLen);
+
+  var STRIDE = 3;
 
   function blurPassHoriz(src, dst, w, h, r) {
     for (var y = 0; y < h; y++) {
-      var rowOffset = y * w * 4;
-      // Process each channel separately
+      var rowOffset = y * w * STRIDE;
       for (var ch = 0; ch < 3; ch++) {
         var sum = 0;
         var count = 0;
-        // Initial window [0, r] for column 0
         for (var k = 0; k <= r && k < w; k++) {
-          sum += src[rowOffset + k * 4 + ch];
+          sum += src[rowOffset + k * STRIDE + ch];
           count++;
         }
-        // Write column 0
         dst[rowOffset + ch] = sum / count;
-        // Slide across remaining columns
         for (var x = 1; x < w; x++) {
           var lo = x - r;
           var hi = x + r;
-          // Remove leaving pixel
           if (lo - 1 >= 0) {
-            sum -= src[rowOffset + (lo - 1) * 4 + ch];
+            sum -= src[rowOffset + (lo - 1) * STRIDE + ch];
             count--;
           }
-          // Add entering pixel
           if (hi < w) {
-            sum += src[rowOffset + hi * 4 + ch];
+            sum += src[rowOffset + hi * STRIDE + ch];
             count++;
           }
-          dst[rowOffset + x * 4 + ch] = sum / count;
+          dst[rowOffset + x * STRIDE + ch] = sum / count;
         }
-      }
-      // Copy alpha unchanged
-      for (var x2 = 0; x2 < w; x2++) {
-        dst[rowOffset + x2 * 4 + 3] = src[rowOffset + x2 * 4 + 3];
       }
     }
   }
@@ -141,48 +145,44 @@ function boxBlur(imageData, radius, iterations) {
       for (var ch = 0; ch < 3; ch++) {
         var sum = 0;
         var count = 0;
-        // Initial window [0, r] for row 0
         for (var k = 0; k <= r && k < h; k++) {
-          sum += src[(k * w + x) * 4 + ch];
+          sum += src[(k * w + x) * STRIDE + ch];
           count++;
         }
-        // Write row 0
-        dst[x * 4 + ch] = sum / count;
-        // Slide
+        dst[x * STRIDE + ch] = sum / count;
         for (var y = 1; y < h; y++) {
           var lo = y - r;
           var hi = y + r;
           if (lo - 1 >= 0) {
-            sum -= src[((lo - 1) * w + x) * 4 + ch];
+            sum -= src[((lo - 1) * w + x) * STRIDE + ch];
             count--;
           }
           if (hi < h) {
-            sum += src[(hi * w + x) * 4 + ch];
+            sum += src[(hi * w + x) * STRIDE + ch];
             count++;
           }
-          dst[(y * w + x) * 4 + ch] = sum / count;
+          dst[(y * w + x) * STRIDE + ch] = sum / count;
         }
-      }
-      // Copy alpha
-      for (var y2 = 0; y2 < h; y2++) {
-        dst[(y2 * w + x) * 4 + 3] = src[(y2 * w + x) * 4 + 3];
       }
     }
   }
 
-  // Iterate: horizontal → vertical, swap buffers
   var a = floatBuffer;
   var b = tmpBuffer;
   for (var iter = 0; iter < iterations; iter++) {
     blurPassHoriz(a, b, w, h, radius);
     blurPassVert(b, a, w, h, radius);
-    // After each iteration, `a` holds the result: horiz writes to `b`, vert writes back to `a`.
   }
 
-  // Convert floats to uint8, rounding
+  // Recombine blurred RGB with original alpha
   var out = new Uint8ClampedArray(srcData.length);
-  for (var j = 0; j < srcData.length; j++) {
-    out[j] = Math.round(a[j]);
+  for (var pi2 = 0; pi2 < pixelCount; pi2++) {
+    var outOff = pi2 * 4;
+    var floatOff = pi2 * 3;
+    out[outOff] = Math.round(a[floatOff]);
+    out[outOff + 1] = Math.round(a[floatOff + 1]);
+    out[outOff + 2] = Math.round(a[floatOff + 2]);
+    out[outOff + 3] = alpha[pi2];
   }
 
   return new ImageData(out, w, h);
