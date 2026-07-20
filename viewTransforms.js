@@ -88,7 +88,7 @@ function boxBlur(imageData, radius, iterations) {
   var w = imageData.width;
   var h = imageData.height;
   var srcData = imageData.data;
-  var floatBuffer = new Float64Array(srcData.length);
+  var floatBuffer = new Float32Array(srcData.length);
 
   // Copy source into float buffer (for the first pass)
   for (var i = 0; i < srcData.length; i++) {
@@ -96,7 +96,7 @@ function boxBlur(imageData, radius, iterations) {
   }
 
   // Temporary buffer for intermediate results between passes
-  var tmpBuffer = new Float64Array(srcData.length);
+  var tmpBuffer = new Float32Array(srcData.length);
 
   function blurPassHoriz(src, dst, w, h, r) {
     for (var y = 0; y < h; y++) {

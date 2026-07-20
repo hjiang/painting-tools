@@ -32,11 +32,11 @@ the Canvas API. Open `index.html` in a browser — it works offline.
   pattern.
 - CSS uses dark theme (`#1a1a2e` background) with responsive breakpoint at
   700px.
-- A slider with tick labels must wrap both in `<div class="slider-stack">`
-  (slider above `.slider-ticks`). Bare `.slider-ticks` uses a fixed
-  `margin-left` that only aligns when the control label is exactly 4rem wide
-  and the slider has an explicit 400px width rule — newer/wider labels break
-  it silently.
+- A slider with tick labels should wrap both in `<div class="slider-stack">`
+  (slider above `.slider-ticks`) in new or updated UI. Bare `.slider-ticks`
+  uses a fixed `margin-left` that only aligns when the control label is
+  exactly 4rem wide and the slider has an explicit 400px width rule —
+  newer/wider labels break it silently.
 
 ## Running Tests
 
