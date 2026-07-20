@@ -176,7 +176,7 @@ ToolShell.register({
 
     // ── Promote button ─────────────────────────
 
-    function getSmoothSuffix() {
+    function getSmoothLabelPart() {
       var s = getSmooth();
       return s > 0 ? ', smoothed ' + s + 'px' : '';
     }
@@ -196,11 +196,11 @@ ToolShell.register({
         return _lastResult.imageData;
       },
       function () {
-        var suffix = getSmoothSuffix();
+        var sp = getSmoothLabelPart();
         if (_selectedBin >= 0 && _selectedBin < getN()) {
-          return 'Isolated band ' + (_selectedBin + 1) + ' (' + getN() + ' values)' + suffix;
+          return 'Isolated band ' + (_selectedBin + 1) + ' (' + getN() + ' values' + sp + ')';
         }
-        return 'Posterized (' + getN() + ' values, ' + getMode() + ')' + suffix;
+        return 'Posterized (' + getN() + ' values, ' + getMode() + sp + ')';
       }
     );
     document.getElementById('posterize-promote-spot').appendChild(promoteBtn);

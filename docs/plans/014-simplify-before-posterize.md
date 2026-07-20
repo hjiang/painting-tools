@@ -59,8 +59,8 @@ posterize → histogram → isolation mask.
 | `docs/IDEAS.md` | Mark idea #7 as done |
 | `README.md` | Mention smoothing in Posterize tool description |
 | `AGENTS.md` | Update design decisions 1/3 to mention optional smoothing |
-| `tests/posterizeSmoothing.test.js` | New: VM-based fake-DOM integration test for smoothing UI wiring |
-| `tests/posterize.test.js` | Add composition coverage: smoothing a 1px checkerboard collapses histogram in both modes; radius-zero is byte-identical |
+| `tests/posterizeSmoothing.test.js` | New: VM-based fake-DOM integration test for smoothing UI wiring. Verifies slider persistence, pipeline invocation (radius 0 skips boxBlur, radius>0 calls boxBlur), and exact promote label strings |
+| `tests/posterize.test.js` | Add composition coverage: smoothing a 1px checkerboard collapses histogram in both modes; radius-zero is byte-identical; per-pixel bandIndexForPixel isolation consistency |
 
 ### HTML (`index.html`)
 
@@ -106,6 +106,8 @@ Add after the Values slider control row and before the Mode row:
    - High-frequency checkerboard (1px cells) with N=2: both bands present.
      Smoothed with radius ≥ 2 collapses toward a single dominant band.
    - Radius 0 is byte-identical to today's posterize output.
+   - Per-pixel bandIndexForPixel isolation consistency on smoothed input.
+   Add monotone-variance boxBlur test to `tests/viewTransforms.test.js`.
 4. Implement the changes.
 5. Re-run all tests — all pass.
 6. Update all documentation.
