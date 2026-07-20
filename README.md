@@ -2,7 +2,7 @@
 
 A multi-tool reference photo prep app for painters — posterize to value levels,
 detect edges for sketching, overlay grids, lighten for printing, mix colors
-with subtractive (Kubelka-Munk) blending, and check underpainting alignment
+with subtractive (Kubelka-Munk) blending, check underpainting alignment
 via projective rectification, and flip/desaturate/blur the reference for easy value-judgment. Posterize, Sketch, Grid, Lighten, and View can be chained via
 output promotion; Color Mixer and Underpainting Check are visual-only and do not promote.
 

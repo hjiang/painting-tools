@@ -176,11 +176,7 @@ function boxBlur(imageData, radius, iterations) {
   for (var iter = 0; iter < iterations; iter++) {
     blurPassHoriz(a, b, w, h, radius);
     blurPassVert(b, a, w, h, radius);
-    // After each full iteration, a contains the result (floats)
-    // Swap: next iteration reads from a, writes to b → then vert writes back to a
-    // After the loop, a contains the result.
-    // But note: blurPassHoriz writes to b, blurPassVert writes to a.
-    // So a is always the result after one full iteration.
+    // After each iteration, `a` holds the result: horiz writes to `b`, vert writes back to `a`.
   }
 
   // Convert floats to uint8, rounding

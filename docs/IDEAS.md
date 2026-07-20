@@ -3,7 +3,7 @@
 Captured 2026-07-20. Ordered within each category by expected value/effort ratio.
 Ideas with a plan document link to it; the rest are unscheduled.
 
-**Top 5 (planned):** #6 (plan 012) · #8 (plan 013) · #7 (plan 014) · #14 (plan 015).
+**Top 4 (planned):** #6 (plan 012) · #8 (plan 013) · #7 (plan 014) · #14 (plan 015).
 
 ## Quick Wins
 
