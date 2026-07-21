@@ -269,6 +269,141 @@ console.log('--- N=12 (max) ---');
 }
 
 // ============================================================
+// POSTERIZE + boxBlur COMPOSITION
+// ============================================================
+console.log('--- Posterize + boxBlur composition ---');
+
+const { boxBlur } = require('../viewTransforms.js');
+const { bandIndexForPixel } = require('../posterize.js');
+
+// Helper: checkerboard (1px alternating black/white cells)
+function checkerboard1px(w, h) {
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const val = (x + y) % 2 === 0 ? 0 : 255;
+      data[idx] = val;
+      data[idx + 1] = val;
+      data[idx + 2] = val;
+      data[idx + 3] = 255;
+    }
+  }
+  return new ImageData(data, w, h);
+}
+
+// Test 1: Radius 0 is byte-identical to direct posterize
+{
+  const checker = checkerboard1px(4, 4);
+
+  const direct = posterize(checker, 2, 'grayscale');
+  const smooth0 = boxBlur(checker, 0, 2);
+  const viaSmooth = posterize(smooth0, 2, 'grayscale');
+
+  let identical = true;
+  for (let i = 0; i < direct.imageData.data.length; i++) {
+    if (direct.imageData.data[i] !== viaSmooth.imageData.data[i]) {
+      identical = false;
+      break;
+    }
+  }
+  assert(identical, 'radius-0 smoothing is byte-identical to direct posterize (grayscale)');
+
+  const directColor = posterize(checker, 2, 'color');
+  const viaSmoothColor = posterize(boxBlur(checker, 0, 2), 2, 'color');
+  let identicalColor = true;
+  for (let i = 0; i < directColor.imageData.data.length; i++) {
+    if (directColor.imageData.data[i] !== viaSmoothColor.imageData.data[i]) {
+      identicalColor = false;
+      break;
+    }
+  }
+  assert(identicalColor, 'radius-0 smoothing is byte-identical to direct posterize (color)');
+}
+
+// Test 2: Smoothing a 1px checkerboard with N=2 collapses histogram
+// toward a single dominant band in both modes
+{
+  const checker = checkerboard1px(8, 8);
+  const totalPixels = 64;
+
+  // Verify raw 1px checker has equal distribution
+  const raw = posterize(checker, 2, 'grayscale');
+  assertEq(raw.histogram[0], 32, '1px checker N=2 grayscale: band 0 has 32 pixels');
+  assertEq(raw.histogram[1], 32, '1px checker N=2 grayscale: band 1 has 32 pixels');
+
+  // After smoothing with radius >= 2, the checkerboard blurs to ~50% gray
+  const blurred = boxBlur(checker, 2, 2);
+  const smoothed = posterize(blurred, 2, 'grayscale');
+
+  const dominantCount = Math.max(smoothed.histogram[0], smoothed.histogram[1]);
+  assert(dominantCount > totalPixels * 0.7,
+    'smoothing 1px checker N=2 grayscale: dominant band > 70% (got ' +
+    Math.round(dominantCount / totalPixels * 100) + '%)');
+
+  // Color mode: same behavior since checker is grayscale
+  const smoothedColor = posterize(boxBlur(checker, 2, 2), 2, 'color');
+  const dominantCountColor = Math.max(smoothedColor.histogram[0], smoothedColor.histogram[1]);
+  assert(dominantCountColor > totalPixels * 0.7,
+    'smoothing 1px checker N=2 color: dominant band > 70% (got ' +
+    Math.round(dominantCountColor / totalPixels * 100) + '%)');
+}
+
+// Test 3: isolateBand on smoothed input is consistent with posterize
+// (per-pixel bandIndexForPixel assertion for both modes)
+{
+  const checker = checkerboard1px(8, 8);
+  const N = 3;
+
+  for (const mode of ['grayscale', 'color']) {
+    const blurred = boxBlur(checker, 2, 2);
+    // Isolate each band and verify per-pixel consistency
+    for (let band = 0; band < N; band++) {
+      const isolated = require('../posterize.js').isolateBand(blurred, N, band, mode);
+      const isoData = isolated.imageData.data;
+      let consistent = true;
+
+      for (let i = 0; i < isoData.length; i += 4) {
+        const r = blurred.data[i];
+        const g = blurred.data[i + 1];
+        const b = blurred.data[i + 2];
+
+        const assignedBand = bandIndexForPixel(r, g, b, N, mode);
+        const isBlack = (isoData[i] === 0 && isoData[i + 1] === 0 && isoData[i + 2] === 0);
+        const isWhite = (isoData[i] === 255 && isoData[i + 1] === 255 && isoData[i + 2] === 255);
+
+        if (assignedBand === band) {
+          // Selected band → black
+          if (!isBlack) { consistent = false; break; }
+        } else {
+          // Not selected → white
+          if (!isWhite) { consistent = false; break; }
+        }
+      }
+
+      assert(consistent,
+        'isolateBand on smoothed input: band ' + band + ' per-pixel consistent (' + mode + ')');
+    }
+
+    // Also verify alpha is preserved (positive assertion per mode)
+    {
+      let alphaOK = true;
+      for (let band2 = 0; band2 < N; band2++) {
+        const isolated2 = require('../posterize.js').isolateBand(blurred, N, band2, mode);
+        for (let i = 0; i < blurred.data.length; i += 4) {
+          if (isolated2.imageData.data[i + 3] !== blurred.data[i + 3]) {
+            alphaOK = false;
+            break;
+          }
+        }
+        if (!alphaOK) break;
+      }
+      assert(alphaOK, 'isolateBand alpha preserved for all bands (' + mode + ')');
+    }
+  }
+}
+
+// ============================================================
 // RESULTS
 // ============================================================
 console.log(`\n${'='.repeat(40)}`);

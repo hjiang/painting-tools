@@ -30,7 +30,7 @@ Ideas with a plan document link to it; the rest are unscheduled.
 7. **Simplify-before-posterize** — optional smoothing pass before
    posterization so noisy photos produce clean, paintable value masses
    instead of speckled bands.
-   → `docs/plans/014-simplify-before-posterize.md`
+   → `docs/plans/014-simplify-before-posterize.md` ✅
 8. **Crop & canvas aspect ratios** — crop the reference to standard canvas
    proportions (8×10, 11×14, golden ratio, …) with a rule-of-thirds overlay;
    promote the crop as the new reference for all other tools.

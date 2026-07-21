@@ -52,6 +52,11 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
 1. **Grayscale posterization** uses Rec. 601 luminance weights:
    `L = 0.299*R + 0.587*G + 0.114*B`. The sum of these coefficients is ~0.99999
    in IEEE 754, so `Math.round()` is applied to the result before quantization.
+   An optional smoothing pre-pass applies `boxBlur(imageData, radius, 2)` before
+   posterization when the Simplify slider is > 0. Radius 0 skips the pass entirely,
+   preserving the exact original path. The same optionally smoothed input is used
+   for posterization, histogram, band isolation, promote, and download — all paths
+   are coherent.
 
 2. **Color posterization** converts RGB → HSL, quantizes only the L channel,
    then converts back. Hue and saturation are preserved, so a red apple stays
@@ -61,6 +66,8 @@ Each test file prints `passed / failed` counts and exits non-zero on failure.
    `band = floor(value / (256/N))`, `output = round(band * bandWidth + bandWidth/2)`.
    Band boundaries are floating-point; for N=3, band 0 covers [0, 85.3),
    band 1 covers [85.3, 170.7), band 2 covers [170.7, 255].
+   Before posterization, an optional box-blur smoothing pass can be applied
+   via the Simplify slider (0–8 px, default 0).
 
 4. **Histogram bins** correspond 1:1 with posterization bands. Bin heights are
    normalized to the maximum bin count.

@@ -23,6 +23,11 @@ values.
 - **Two modes**:
   - **Grayscale** — convert to luminance, posterize, output grayscale image
   - **Color** — convert to HSL, quantize lightness only, preserve hue & saturation
+- **Optional smoothing pre-pass**: A Simplify (blur) slider (0–8 px radius, default 0)
+  applies `boxBlur` before posterization, using the same `boxBlur` from the View tool
+  (reused, not duplicated). Histogram, band isolation, promote, and download all use
+  the same smoothed source for coherence. Radius 0 skips smoothing (today's exact path).
+  Setting persisted at `painting-tools.posterize.smooth`.
 
 ### F2: Before / After Split View
 Show the original photo and posterized result side by side (or with a draggable

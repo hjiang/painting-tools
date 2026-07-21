@@ -256,6 +256,44 @@ console.log('\n--- boxBlur ---');
   }
 }
 
+// Monotone variance: additional iterations smooth more (variance non-increasing)
+{
+  var checker = solidImage(8, 8, 0, 0, 0);
+  for (var y = 0; y < 8; y++) {
+    for (var x = 0; x < 8; x++) {
+      var idx = (y * 8 + x) * 4;
+      var val = (x + y) % 2 === 0 ? 0 : 255;
+      checker.data[idx] = val;
+      checker.data[idx + 1] = val;
+      checker.data[idx + 2] = val;
+    }
+  }
+
+  var blur1 = viewTransforms.boxBlur(checker, 1, 1);
+  var blur2 = viewTransforms.boxBlur(checker, 1, 2);
+  var blur3 = viewTransforms.boxBlur(checker, 1, 3);
+
+  function computeVariance(img) {
+    var data = img.data;
+    var sum = 0, sumSq = 0, count = 0;
+    for (var i = 0; i < data.length; i += 4) {
+      var v = data[i]; // R channel (grayscale)
+      sum += v;
+      sumSq += v * v;
+      count++;
+    }
+    var mean = sum / count;
+    return sumSq / count - mean * mean;
+  }
+
+  var v1 = computeVariance(blur1);
+  var v2 = computeVariance(blur2);
+  var v3 = computeVariance(blur3);
+
+  assert(v2 <= v1 + 0.01, 'boxBlur variance non-increasing: iter 2 ≤ iter 1 (' + v2 + ' ≤ ' + v1 + ')');
+  assert(v3 <= v2 + 0.01, 'boxBlur variance non-increasing: iter 3 ≤ iter 2 (' + v3 + ' ≤ ' + v2 + ')');
+}
+
 // ============================================================
 // RESULTS
 // ============================================================
