@@ -166,7 +166,9 @@ Crop the reference image to a standard canvas proportion for painting.
 - **Apply Crop** produces the cropped image at full resolution (pure pixel cut,
   no resampling) and promotes it via `ImageManager.setImageData` so the
   cropped version becomes the new reference for all other tools
-- Selected preset persists across reloads via `localStorage`
+- Selected preset and orientation persist across reloads via the error-safe typed
+  `Settings` wrapper around `localStorage`; unavailable storage falls back to
+  the default Free / landscape state
 - Download the cropped image at original resolution as PNG
 
 ### F11: Color Mixer / Paint Recipe

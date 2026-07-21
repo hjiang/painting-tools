@@ -37,6 +37,10 @@ the Canvas API. Open `index.html` in a browser — it works offline.
   uses a fixed `margin-left` that only aligns when the control label is
   exactly 4rem wide and the slider has an explicit 400px width rule —
   newer/wider labels break it silently.
+- `Settings` exposes typed getters only (`getString`, `getNumber`, `getInt`, and
+  `getBool`); never call a generic `Settings.get`. A mount-time exception
+  prevents a `ToolShell` tool from receiving its `process` function for that
+  page session.
 
 ## Running Tests
 

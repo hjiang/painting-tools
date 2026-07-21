@@ -36,14 +36,11 @@ ToolShell.register({
     };
 
     // ── Settings persistence ───────────────────
-    var savedPreset = Settings.get('painting-tools.crop.preset');
+    var savedPreset = Settings.getString('painting-tools.crop.preset', 'free');
     if (savedPreset && PRESETS[savedPreset] !== undefined) {
       _preset = savedPreset;
     }
-    var savedLandscape = Settings.get('painting-tools.crop.landscape');
-    if (savedLandscape !== null) {
-      _landscape = !!savedLandscape;
-    }
+    _landscape = Settings.getBool('painting-tools.crop.landscape', _landscape);
 
     // ── Helpers ────────────────────────────────
 

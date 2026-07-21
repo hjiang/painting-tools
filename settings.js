@@ -9,6 +9,14 @@
 // caller's fallback is returned.
 
 var Settings = {
+  getString: function (key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw !== null) return raw;
+    } catch (e) { /* storage unavailable */ }
+    return fallback;
+  },
+
   getNumber: function (key, fallback) {
     try {
       var raw = localStorage.getItem(key);

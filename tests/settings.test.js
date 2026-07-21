@@ -35,6 +35,11 @@ globalThis.localStorage = makeStorage();
 
 var Settings = require('../settings.js').Settings;
 
+// ---- getString ----
+assertEq(Settings.getString('missing', 'free'), 'free', 'getString missing → fallback');
+localStorage.setItem('preset', '4:5');
+assertEq(Settings.getString('preset', 'free'), '4:5', 'getString returns stored text unchanged');
+
 // ---- getNumber ----
 assertEq(Settings.getNumber('missing', 1.0), 1.0, 'getNumber missing → fallback');
 localStorage.setItem('n', '1.5');
@@ -76,6 +81,7 @@ var thrower = {
   setItem: function () { throw new Error('blocked'); }
 };
 globalThis.localStorage = thrower;
+assertEq(Settings.getString('x', 'free'), 'free', 'getString swallows getItem throw → fallback');
 assertEq(Settings.getNumber('x', 4), 4, 'getNumber swallows getItem throw → fallback');
 assertEq(Settings.getInt('x', 5), 5, 'getInt swallows getItem throw → fallback');
 assertEq(Settings.getBool('x', true), true, 'getBool swallows getItem throw → fallback');
