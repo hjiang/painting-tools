@@ -3,7 +3,7 @@
 Captured 2026-07-20. Ordered within each category by expected value/effort ratio.
 Ideas with a plan document link to it; the rest are unscheduled.
 
-**Top 3 (planned):** #8 (plan 013) · #7 (plan 014) · #14 (plan 015).
+**Top 2 (planned):** #7 (plan 014) · #14 (plan 015).
 
 ## Quick Wins
 
@@ -34,7 +34,7 @@ Ideas with a plan document link to it; the rest are unscheduled.
 8. **Crop & canvas aspect ratios** — crop the reference to standard canvas
    proportions (8×10, 11×14, golden ratio, …) with a rule-of-thirds overlay;
    promote the crop as the new reference for all other tools.
-   → `docs/plans/013-crop-to-canvas-aspect.md`
+   → `docs/plans/013-crop-to-canvas-aspect.md` ✅
 9. **Grid: print grid-only sheet** — export a labeled blank grid sized for
    the physical canvas so it can be transferred to the real surface.
 10. **Sketch: line weight + tracing-print mode** — adjustable line thickness
